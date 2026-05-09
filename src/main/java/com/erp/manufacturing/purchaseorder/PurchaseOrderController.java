@@ -1,5 +1,9 @@
 package com.erp.manufacturing.purchaseorder;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,26 +23,44 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/purchase-orders")
 @RequiredArgsConstructor
+@Tag(name = "Purchase Orders", description = "Manage purchase orders and receiving workflow")
 public class PurchaseOrderController {
 
     private final PurchaseOrderService purchaseOrderService;
 
     @GetMapping
+    @Operation(summary = "Get all purchase orders")
+    @ApiResponse(responseCode = "200", description = "Purchase orders retrieved successfully")
     public ResponseEntity<List<PurchaseOrder>> getAllPurchaseOrders() {
         return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders());
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get purchase order by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Purchase order retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Purchase order not found")
+    })
     public ResponseEntity<PurchaseOrder> getPurchaseOrderById(@PathVariable Long id) {
         return ResponseEntity.ok(purchaseOrderService.getPurchaseOrderById(id));
     }
 
     @PostMapping
+    @Operation(summary = "Create purchase order", description = "Creates a purchase order with optional nested line items.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Purchase order created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid purchase order request")
+    })
     public ResponseEntity<PurchaseOrder> createPurchaseOrder(@Valid @RequestBody PurchaseOrder purchaseOrder) {
         return ResponseEntity.status(HttpStatus.CREATED).body(purchaseOrderService.createPurchaseOrder(purchaseOrder));
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update purchase order")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Purchase order updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Purchase order not found")
+    })
     public ResponseEntity<PurchaseOrder> updatePurchaseOrder(
             @PathVariable Long id,
             @Valid @RequestBody PurchaseOrder purchaseOrder
@@ -47,6 +69,12 @@ public class PurchaseOrderController {
     }
 
     @PostMapping("/{id}/receive")
+    @Operation(summary = "Receive purchase order", description = "Receives a purchase order and increases raw material stock.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Purchase order received successfully"),
+            @ApiResponse(responseCode = "400", description = "Purchase order cannot be received"),
+            @ApiResponse(responseCode = "404", description = "Purchase order not found")
+    })
     public ResponseEntity<Map<String, Object>> receivePurchaseOrder(@PathVariable Long id) {
         PurchaseOrder receivedPurchaseOrder = purchaseOrderService.receivePurchaseOrder(id);
 
@@ -57,6 +85,11 @@ public class PurchaseOrderController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete purchase order")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Purchase order deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Purchase order not found")
+    })
     public ResponseEntity<Void> deletePurchaseOrder(@PathVariable Long id) {
         purchaseOrderService.deletePurchaseOrder(id);
         return ResponseEntity.noContent().build();

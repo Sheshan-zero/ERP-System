@@ -1,6 +1,7 @@
 package com.erp.manufacturing.salesorder;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,6 +26,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "SALESORDER")
+@Schema(description = "Sales order with nested sales order items and payments")
 @Getter
 @Setter
 @Builder

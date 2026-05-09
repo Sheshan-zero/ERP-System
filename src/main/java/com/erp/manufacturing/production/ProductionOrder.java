@@ -1,6 +1,7 @@
 package com.erp.manufacturing.production;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,6 +26,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "PRODUCTIONORDER")
+@Schema(description = "Production order with nested material usage and employee assignments")
 @Getter
 @Setter
 @Builder

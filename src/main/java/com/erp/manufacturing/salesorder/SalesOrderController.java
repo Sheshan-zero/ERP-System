@@ -1,5 +1,9 @@
 package com.erp.manufacturing.salesorder;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,26 +23,44 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/sales-orders")
 @RequiredArgsConstructor
+@Tag(name = "Sales Orders", description = "Manage sales orders, payments, and delivery workflow")
 public class SalesOrderController {
 
     private final SalesOrderService salesOrderService;
 
     @GetMapping
+    @Operation(summary = "Get all sales orders")
+    @ApiResponse(responseCode = "200", description = "Sales orders retrieved successfully")
     public ResponseEntity<List<SalesOrder>> getAllSalesOrders() {
         return ResponseEntity.ok(salesOrderService.getAllSalesOrders());
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get sales order by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Sales order retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Sales order not found")
+    })
     public ResponseEntity<SalesOrder> getSalesOrderById(@PathVariable Long id) {
         return ResponseEntity.ok(salesOrderService.getSalesOrderById(id));
     }
 
     @PostMapping
+    @Operation(summary = "Create sales order", description = "Creates a sales order with nested line items and optional payments.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Sales order created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid sales order request")
+    })
     public ResponseEntity<SalesOrder> createSalesOrder(@Valid @RequestBody SalesOrder salesOrder) {
         return ResponseEntity.status(HttpStatus.CREATED).body(salesOrderService.createSalesOrder(salesOrder));
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update sales order")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Sales order updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Sales order not found")
+    })
     public ResponseEntity<SalesOrder> updateSalesOrder(
             @PathVariable Long id,
             @Valid @RequestBody SalesOrder salesOrder
@@ -47,6 +69,12 @@ public class SalesOrderController {
     }
 
     @PostMapping("/{id}/deliver")
+    @Operation(summary = "Deliver sales order", description = "Delivers a sales order and reduces finished product stock.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Sales order delivered successfully"),
+            @ApiResponse(responseCode = "400", description = "Sales order cannot be delivered"),
+            @ApiResponse(responseCode = "404", description = "Sales order not found")
+    })
     public ResponseEntity<Map<String, Object>> deliverSalesOrder(@PathVariable Long id) {
         SalesOrder deliveredSalesOrder = salesOrderService.deliverSalesOrder(id);
 
@@ -57,6 +85,11 @@ public class SalesOrderController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete sales order")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Sales order deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Sales order not found")
+    })
     public ResponseEntity<Void> deleteSalesOrder(@PathVariable Long id) {
         salesOrderService.deleteSalesOrder(id);
         return ResponseEntity.noContent().build();

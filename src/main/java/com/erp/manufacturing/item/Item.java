@@ -11,6 +11,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ITEM")
+@Schema(description = "Inventory item, including raw materials and finished products")
 @Getter
 @Setter
 @Builder

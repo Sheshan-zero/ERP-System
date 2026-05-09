@@ -3,6 +3,7 @@ package com.erp.manufacturing.purchaseorder;
 import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
 import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.enums.PurchaseOrderStatus;
 import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.employee.Employee;
 import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
@@ -11,6 +12,8 @@ import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +27,6 @@ import java.util.List;
 @Transactional
 public class PurchaseOrderService {
 
-    private static final String RECEIVED_STATUS = "Received";
     private static final String STOCK_IN_TRANSACTION_TYPE = "Stock In";
 
     private final PurchaseOrderRepository purchaseOrderRepository;
@@ -34,8 +36,8 @@ public class PurchaseOrderService {
     private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
-    public List<PurchaseOrder> getAllPurchaseOrders() {
-        return purchaseOrderRepository.findAll();
+    public Page<PurchaseOrder> getAllPurchaseOrders(Pageable pageable) {
+        return purchaseOrderRepository.findAll(pageable);
     }
 
     @Transactional(readOnly = true)
@@ -88,8 +90,11 @@ public class PurchaseOrderService {
     public PurchaseOrder receivePurchaseOrder(Long purchaseOrderId, Long employeeId) {
         PurchaseOrder purchaseOrder = getPurchaseOrderById(purchaseOrderId);
 
-        if (RECEIVED_STATUS.equalsIgnoreCase(purchaseOrder.getStatus())) {
+        if (purchaseOrder.getStatus() == PurchaseOrderStatus.Received) {
             throw new BusinessException("Purchase order is already received");
+        }
+        if (purchaseOrder.getStatus() == PurchaseOrderStatus.Cancelled) {
+            throw new BusinessException("Cancelled purchase orders cannot be received");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -117,7 +122,7 @@ public class PurchaseOrderService {
                     .build());
         }
 
-        purchaseOrder.setStatus(RECEIVED_STATUS);
+        purchaseOrder.setStatus(PurchaseOrderStatus.Received);
 
         auditLogRepository.save(AuditLog.builder()
                 .employee(employee)

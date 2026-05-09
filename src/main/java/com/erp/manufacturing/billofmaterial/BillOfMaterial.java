@@ -35,12 +35,12 @@ public class BillOfMaterial {
     @Column(name = "BOM_ID", nullable = false)
     private Long bomId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "FINISHED_PRODUCT_ID")
     @NotNull(message = "Finished product is required")
     private Item finishedProduct;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RAW_MATERIAL_ID")
     @NotNull(message = "Raw material is required")
     private Item rawMaterial;

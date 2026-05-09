@@ -2,10 +2,10 @@ package com.erp.manufacturing.item;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -15,8 +15,8 @@ public class ItemService {
     private final ItemRepository itemRepository;
 
     @Transactional(readOnly = true)
-    public List<Item> getAllItems() {
-        return itemRepository.findAll();
+    public Page<Item> getAllItems(Pageable pageable) {
+        return itemRepository.findAll(pageable);
     }
 
     @Transactional(readOnly = true)

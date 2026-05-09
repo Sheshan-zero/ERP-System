@@ -33,7 +33,7 @@ public class AuditLog {
     @Column(name = "LOG_ID", nullable = false)
     private Long logId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "EMPLOYEE_ID")
     private Employee employee;
 

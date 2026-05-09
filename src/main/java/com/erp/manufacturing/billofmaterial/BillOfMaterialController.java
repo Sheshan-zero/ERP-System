@@ -2,6 +2,8 @@ package com.erp.manufacturing.billofmaterial;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,8 +25,8 @@ public class BillOfMaterialController {
     private final BillOfMaterialService billOfMaterialService;
 
     @GetMapping
-    public ResponseEntity<List<BillOfMaterial>> getAllBillOfMaterials() {
-        return ResponseEntity.ok(billOfMaterialService.getAllBillOfMaterials());
+    public ResponseEntity<Page<BillOfMaterial>> getAllBillOfMaterials(Pageable pageable) {
+        return ResponseEntity.ok(billOfMaterialService.getAllBillOfMaterials(pageable));
     }
 
     @GetMapping("/{id}")

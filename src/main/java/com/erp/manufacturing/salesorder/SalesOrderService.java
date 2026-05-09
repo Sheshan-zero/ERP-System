@@ -3,6 +3,7 @@ package com.erp.manufacturing.salesorder;
 import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
 import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.enums.SalesOrderStatus;
 import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.employee.Employee;
 import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
@@ -11,6 +12,8 @@ import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +27,6 @@ import java.util.List;
 @Transactional
 public class SalesOrderService {
 
-    private static final String DELIVERED_STATUS = "Delivered";
     private static final String STOCK_OUT_TRANSACTION_TYPE = "Stock Out";
 
     private final SalesOrderRepository salesOrderRepository;
@@ -34,8 +36,8 @@ public class SalesOrderService {
     private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
-    public List<SalesOrder> getAllSalesOrders() {
-        return salesOrderRepository.findAll();
+    public Page<SalesOrder> getAllSalesOrders(Pageable pageable) {
+        return salesOrderRepository.findAll(pageable);
     }
 
     @Transactional(readOnly = true)
@@ -93,8 +95,11 @@ public class SalesOrderService {
     public SalesOrder deliverSalesOrder(Long salesOrderId) {
         SalesOrder salesOrder = getSalesOrderById(salesOrderId);
 
-        if (DELIVERED_STATUS.equalsIgnoreCase(salesOrder.getOrderStatus())) {
+        if (salesOrder.getOrderStatus() == SalesOrderStatus.Delivered) {
             throw new BusinessException("Sales order is already delivered");
+        }
+        if (salesOrder.getOrderStatus() == SalesOrderStatus.Cancelled) {
+            throw new BusinessException("Cancelled sales orders cannot be delivered");
         }
 
         Employee employee = getEmployeeReference(salesOrder.getEmployeeId());
@@ -122,7 +127,7 @@ public class SalesOrderService {
                     .build());
         }
 
-        salesOrder.setOrderStatus(DELIVERED_STATUS);
+        salesOrder.setOrderStatus(SalesOrderStatus.Delivered);
 
         auditLogRepository.save(AuditLog.builder()
                 .employee(employee)

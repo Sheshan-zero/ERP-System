@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,8 +18,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/suppliers")
@@ -30,8 +30,8 @@ public class SupplierController {
     @GetMapping
     @Operation(summary = "Get all suppliers")
     @ApiResponse(responseCode = "200", description = "Suppliers retrieved successfully")
-    public ResponseEntity<List<Supplier>> getAllSuppliers() {
-        return ResponseEntity.ok(supplierService.getAllSuppliers());
+    public ResponseEntity<Page<Supplier>> getAllSuppliers(Pageable pageable) {
+        return ResponseEntity.ok(supplierService.getAllSuppliers(pageable));
     }
 
     @GetMapping("/{id}")

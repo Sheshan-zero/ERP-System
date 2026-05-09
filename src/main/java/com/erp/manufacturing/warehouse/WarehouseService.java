@@ -2,10 +2,10 @@ package com.erp.manufacturing.warehouse;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -15,8 +15,8 @@ public class WarehouseService {
     private final WarehouseRepository warehouseRepository;
 
     @Transactional(readOnly = true)
-    public List<Warehouse> getAllWarehouses() {
-        return warehouseRepository.findAll();
+    public Page<Warehouse> getAllWarehouses(Pageable pageable) {
+        return warehouseRepository.findAll(pageable);
     }
 
     @Transactional(readOnly = true)

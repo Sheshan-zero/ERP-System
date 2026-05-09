@@ -1,6 +1,7 @@
 package com.erp.manufacturing.purchaseorder;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.erp.manufacturing.common.enums.PurchaseOrderStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -8,6 +9,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -54,7 +57,8 @@ public class PurchaseOrder {
 
     @Size(max = 30, message = "Status must not exceed 30 characters")
     @Column(name = "STATUS", length = 30)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private PurchaseOrderStatus status;
 
     @Column(name = "TOTAL_AMOUNT", precision = 12, scale = 2)
     private BigDecimal totalAmount;

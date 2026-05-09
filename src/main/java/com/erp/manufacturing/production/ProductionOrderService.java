@@ -3,6 +3,7 @@ package com.erp.manufacturing.production;
 import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
 import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.enums.ProductionOrderStatus;
 import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.employee.Employee;
 import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
@@ -11,6 +12,8 @@ import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +27,6 @@ import java.util.List;
 @Transactional
 public class ProductionOrderService {
 
-    private static final String COMPLETED_STATUS = "Completed";
     private static final String STOCK_OUT_TRANSACTION_TYPE = "Stock Out";
     private static final String STOCK_IN_TRANSACTION_TYPE = "Stock In";
 
@@ -35,8 +37,8 @@ public class ProductionOrderService {
     private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
-    public List<ProductionOrder> getAllProductionOrders() {
-        return productionOrderRepository.findAll();
+    public Page<ProductionOrder> getAllProductionOrders(Pageable pageable) {
+        return productionOrderRepository.findAll(pageable);
     }
 
     @Transactional(readOnly = true)
@@ -99,8 +101,11 @@ public class ProductionOrderService {
     public ProductionOrder completeProductionOrder(Long productionOrderId) {
         ProductionOrder productionOrder = getProductionOrderById(productionOrderId);
 
-        if (COMPLETED_STATUS.equalsIgnoreCase(productionOrder.getStatus())) {
+        if (productionOrder.getStatus() == ProductionOrderStatus.Completed) {
             throw new BusinessException("Production order is already completed");
+        }
+        if (productionOrder.getStatus() == ProductionOrderStatus.Cancelled) {
+            throw new BusinessException("Cancelled production orders cannot be completed");
         }
         if (productionOrder.getQuantityToProduce() == null
                 || productionOrder.getQuantityToProduce().compareTo(BigDecimal.ZERO) <= 0) {
@@ -145,7 +150,7 @@ public class ProductionOrderService {
                 .remarks("Production order " + productionOrderId + " completed")
                 .build());
 
-        productionOrder.setStatus(COMPLETED_STATUS);
+        productionOrder.setStatus(ProductionOrderStatus.Completed);
         productionOrder.setQuantityProduced(producedQuantity);
 
         auditLogRepository.save(AuditLog.builder()

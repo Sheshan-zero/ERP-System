@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/purchase-orders")
@@ -43,6 +44,16 @@ public class PurchaseOrderController {
             @Valid @RequestBody PurchaseOrder purchaseOrder
     ) {
         return ResponseEntity.ok(purchaseOrderService.updatePurchaseOrder(id, purchaseOrder));
+    }
+
+    @PostMapping("/{id}/receive")
+    public ResponseEntity<Map<String, Object>> receivePurchaseOrder(@PathVariable Long id) {
+        PurchaseOrder receivedPurchaseOrder = purchaseOrderService.receivePurchaseOrder(id);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Purchase order received successfully",
+                "purchaseOrder", receivedPurchaseOrder
+        ));
     }
 
     @DeleteMapping("/{id}")

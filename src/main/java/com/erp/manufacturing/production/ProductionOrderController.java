@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/production-orders")
@@ -46,6 +47,16 @@ public class ProductionOrderController {
             @Valid @RequestBody ProductionOrder productionOrder
     ) {
         return ResponseEntity.ok(productionOrderService.updateProductionOrder(id, productionOrder));
+    }
+
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<Map<String, Object>> completeProductionOrder(@PathVariable Long id) {
+        ProductionOrder completedProductionOrder = productionOrderService.completeProductionOrder(id);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Production order completed successfully",
+                "productionOrder", completedProductionOrder
+        ));
     }
 
     @DeleteMapping("/{id}")

@@ -26,7 +26,7 @@ public class ItemService {
     }
 
     public Item createItem(Item item) {
-        if (itemRepository.existsById(item.getItemId())) {
+        if (item.getItemId() != null && itemRepository.existsById(item.getItemId())) {
             throw new IllegalArgumentException("Item already exists with id: " + item.getItemId());
         }
 

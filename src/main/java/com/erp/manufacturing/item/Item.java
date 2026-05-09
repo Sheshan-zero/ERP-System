@@ -2,7 +2,10 @@ package com.erp.manufacturing.item;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -27,7 +30,12 @@ import java.time.LocalDateTime;
 public class Item {
 
     @Id
-    @NotNull(message = "Item ID is required")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "item_seq_gen")
+    @SequenceGenerator(
+            name = "item_seq_gen",
+            sequenceName = "item_seq",
+            allocationSize = 1
+    )
     @Column(name = "ITEM_ID", nullable = false)
     private Long itemId;
 

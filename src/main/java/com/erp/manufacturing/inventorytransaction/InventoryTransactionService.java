@@ -2,8 +2,10 @@ package com.erp.manufacturing.inventorytransaction;
 
 import com.erp.manufacturing.common.BusinessException;
 import com.erp.manufacturing.common.ResourceNotFoundException;
+import com.erp.manufacturing.inventorytransaction.dto.WarehouseStockDto;
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +23,7 @@ public class InventoryTransactionService {
 
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final ItemRepository itemRepository;
+    private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public Page<InventoryTransaction> getAllInventoryTransactions(Pageable pageable) {
@@ -54,10 +57,56 @@ public class InventoryTransactionService {
         return inventoryTransactionRepository.save(inventoryTransaction);
     }
 
+    @Transactional(readOnly = true)
+    public List<WarehouseStockDto> getStockByWarehouse() {
+        List<Object[]> rows = entityManager.createNativeQuery("""
+                        SELECT i.item_id,
+                               i.item_name,
+                               w.warehouse_id,
+                               w.warehouse_name,
+                               COALESCE(SUM(CASE
+                                   WHEN it.transaction_type = 'Stock In' THEN it.quantity
+                                   WHEN it.transaction_type = 'Stock Out' THEN -it.quantity
+                                   ELSE 0
+                               END), 0) AS quantity_on_hand
+                        FROM inventorytransaction it
+                        JOIN item i ON i.item_id = it.item_id
+                        LEFT JOIN warehouse w ON w.warehouse_id = it.warehouse_id
+                        GROUP BY i.item_id, i.item_name, w.warehouse_id, w.warehouse_name
+                        ORDER BY i.item_name, w.warehouse_name
+                        """)
+                .getResultList();
+
+        return rows.stream()
+                .map(row -> new WarehouseStockDto(
+                        toLong(row[0]),
+                        (String) row[1],
+                        toLong(row[2]),
+                        (String) row[3],
+                        toBigDecimal(row[4])
+                ))
+                .toList();
+    }
+
     private void ensureStockAvailable(Item item, BigDecimal quantity) {
         BigDecimal currentStock = item.getCurrentStock() == null ? BigDecimal.ZERO : item.getCurrentStock();
         if (quantity == null || currentStock.compareTo(quantity) < 0) {
             throw new BusinessException("Insufficient stock for item id: " + item.getItemId());
         }
+    }
+
+    private Long toLong(Object value) {
+        return value == null ? null : ((Number) value).longValue();
+    }
+
+    private BigDecimal toBigDecimal(Object value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+        if (value instanceof BigDecimal bigDecimal) {
+            return bigDecimal;
+        }
+
+        return BigDecimal.valueOf(((Number) value).doubleValue());
     }
 }

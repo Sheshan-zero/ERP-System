@@ -2,6 +2,8 @@ package com.erp.manufacturing.production;
 
 import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
+import com.erp.manufacturing.billofmaterial.BillOfMaterial;
+import com.erp.manufacturing.billofmaterial.BillOfMaterialRepository;
 import com.erp.manufacturing.common.BusinessException;
 import com.erp.manufacturing.common.enums.ProductionOrderStatus;
 import com.erp.manufacturing.common.ResourceNotFoundException;
@@ -34,6 +36,7 @@ public class ProductionOrderService {
     private final ItemRepository itemRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final AuditLogRepository auditLogRepository;
+    private final BillOfMaterialRepository billOfMaterialRepository;
     private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
@@ -117,6 +120,7 @@ public class ProductionOrderService {
 
         Employee employee = getEmployeeReference(productionOrder.getEmployeeId());
         LocalDateTime now = LocalDateTime.now();
+        explodeBomIfNoMaterialUsage(productionOrder);
 
         for (ProductionMaterialUsage usage : productionOrder.getMaterialUsages()) {
             Item rawMaterial = getItem(usage.getRawMaterialId(), "Raw material not found with id: ");
@@ -214,5 +218,40 @@ public class ProductionOrderService {
         if (getCurrentStock(item).compareTo(quantity) < 0) {
             throw new BusinessException("Insufficient stock for item id: " + item.getItemId());
         }
+    }
+
+    private void explodeBomIfNoMaterialUsage(ProductionOrder productionOrder) {
+        if (productionOrder.getMaterialUsages() != null && !productionOrder.getMaterialUsages().isEmpty()) {
+            return;
+        }
+
+        List<BillOfMaterial> billOfMaterials = billOfMaterialRepository.findByFinishedProductItemId(
+                productionOrder.getFinishedProductId()
+        );
+        if (billOfMaterials.isEmpty()) {
+            throw new BusinessException("No BOM found for finished product id: " + productionOrder.getFinishedProductId());
+        }
+
+        List<ProductionMaterialUsage> generatedUsages = new ArrayList<>();
+        for (BillOfMaterial billOfMaterial : billOfMaterials) {
+            BigDecimal wastageMultiplier = BigDecimal.ONE;
+            if (billOfMaterial.getWastagePercentage() != null) {
+                wastageMultiplier = wastageMultiplier.add(
+                        billOfMaterial.getWastagePercentage().divide(BigDecimal.valueOf(100))
+                );
+            }
+
+            ProductionMaterialUsage usage = ProductionMaterialUsage.builder()
+                    .productionOrder(productionOrder)
+                    .rawMaterialId(billOfMaterial.getRawMaterial().getItemId())
+                    .quantityUsed(billOfMaterial.getRequiredQuantity()
+                            .multiply(productionOrder.getQuantityToProduce())
+                            .multiply(wastageMultiplier))
+                    .usageDate(LocalDateTime.now())
+                    .build();
+            generatedUsages.add(usage);
+        }
+
+        productionOrder.setMaterialUsages(generatedUsages);
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.erp.manufacturing.salesorder.dto.SalesInvoiceDto;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,6 +45,11 @@ public class SalesOrderController {
     })
     public ResponseEntity<SalesOrder> getSalesOrderById(@PathVariable Long id) {
         return ResponseEntity.ok(salesOrderService.getSalesOrderById(id));
+    }
+
+    @GetMapping("/{id}/invoice")
+    public ResponseEntity<SalesInvoiceDto> generateInvoice(@PathVariable Long id) {
+        return ResponseEntity.ok(salesOrderService.generateInvoice(id));
     }
 
     @PostMapping

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import com.erp.manufacturing.purchaseorder.dto.PurchaseBillDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,11 @@ public class PurchaseOrderController {
         return ResponseEntity.ok(purchaseOrderService.getPurchaseOrderById(id));
     }
 
+    @GetMapping("/{id}/bill")
+    public ResponseEntity<PurchaseBillDto> generateBill(@PathVariable Long id) {
+        return ResponseEntity.ok(purchaseOrderService.generateBill(id));
+    }
+
     @PostMapping
     @Operation(summary = "Create purchase order", description = "Creates a purchase order with optional nested line items.")
     @ApiResponses({
@@ -86,6 +92,19 @@ public class PurchaseOrderController {
         return ResponseEntity.ok(Map.of(
                 "message", "Purchase order received successfully",
                 "purchaseOrder", receivedPurchaseOrder
+        ));
+    }
+
+    @PostMapping("/{id}/approve")
+    public ResponseEntity<Map<String, Object>> approvePurchaseOrder(
+            @PathVariable Long id,
+            @RequestParam Long employeeId
+    ) {
+        PurchaseOrder approvedPurchaseOrder = purchaseOrderService.approvePurchaseOrder(id, employeeId);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Purchase order approved successfully",
+                "purchaseOrder", approvedPurchaseOrder
         ));
     }
 

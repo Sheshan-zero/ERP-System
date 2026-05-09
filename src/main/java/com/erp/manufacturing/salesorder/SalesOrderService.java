@@ -10,6 +10,7 @@ import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
+import com.erp.manufacturing.salesorder.dto.SalesInvoiceDto;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -90,6 +91,28 @@ public class SalesOrderService {
         }
 
         salesOrderRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public SalesInvoiceDto generateInvoice(Long salesOrderId) {
+        SalesOrder salesOrder = getSalesOrderById(salesOrderId);
+        BigDecimal totalAmount = salesOrder.getTotalAmount() == null ? BigDecimal.ZERO : salesOrder.getTotalAmount();
+        BigDecimal paidAmount = salesOrder.getPayments().stream()
+                .map(Payment::getAmount)
+                .filter(amount -> amount != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal balanceAmount = totalAmount.subtract(paidAmount);
+
+        return new SalesInvoiceDto(
+                salesOrder.getSalesOrderId(),
+                salesOrder.getSalesOrderId(),
+                salesOrder.getCustomerId(),
+                salesOrder.getOrderDate(),
+                totalAmount,
+                paidAmount,
+                balanceAmount,
+                balanceAmount.compareTo(BigDecimal.ZERO) <= 0 ? "Paid" : "Open"
+        );
     }
 
     public SalesOrder deliverSalesOrder(Long salesOrderId) {

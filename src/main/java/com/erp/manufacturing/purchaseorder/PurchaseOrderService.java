@@ -10,8 +10,10 @@ import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
+import com.erp.manufacturing.purchaseorder.dto.PurchaseBillDto;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,9 @@ public class PurchaseOrderService {
     private final AuditLogRepository auditLogRepository;
     private final EntityManager entityManager;
 
+    @Value("${app.purchase.approval-threshold:100000}")
+    private BigDecimal approvalThreshold;
+
     @Transactional(readOnly = true)
     public Page<PurchaseOrder> getAllPurchaseOrders(Pageable pageable) {
         return purchaseOrderRepository.findAll(pageable);
@@ -54,6 +59,7 @@ public class PurchaseOrderService {
         }
 
         attachItemsAndCalculateTotals(purchaseOrder);
+        applyApprovalStatus(purchaseOrder);
         return purchaseOrderRepository.save(purchaseOrder);
     }
 
@@ -75,6 +81,7 @@ public class PurchaseOrderService {
             }
         }
         existingPurchaseOrder.setTotalAmount(calculateTotalAmount(existingPurchaseOrder.getPurchaseOrderItems()));
+        applyApprovalStatus(existingPurchaseOrder);
 
         return purchaseOrderRepository.save(existingPurchaseOrder);
     }
@@ -85,6 +92,42 @@ public class PurchaseOrderService {
         }
 
         purchaseOrderRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public PurchaseBillDto generateBill(Long purchaseOrderId) {
+        PurchaseOrder purchaseOrder = getPurchaseOrderById(purchaseOrderId);
+
+        return new PurchaseBillDto(
+                purchaseOrder.getPurchaseOrderId(),
+                purchaseOrder.getPurchaseOrderId(),
+                purchaseOrder.getSupplierId(),
+                purchaseOrder.getOrderDate(),
+                purchaseOrder.getTotalAmount() == null ? BigDecimal.ZERO : purchaseOrder.getTotalAmount(),
+                purchaseOrder.getStatus() == null ? null : purchaseOrder.getStatus().name()
+        );
+    }
+
+    public PurchaseOrder approvePurchaseOrder(Long purchaseOrderId, Long employeeId) {
+        PurchaseOrder purchaseOrder = getPurchaseOrderById(purchaseOrderId);
+
+        if (purchaseOrder.getStatus() != PurchaseOrderStatus.PendingApproval) {
+            throw new BusinessException("Only purchase orders pending approval can be approved");
+        }
+
+        Employee employee = getEmployeeReference(employeeId);
+        purchaseOrder.setStatus(PurchaseOrderStatus.Approved);
+
+        auditLogRepository.save(AuditLog.builder()
+                .employee(employee)
+                .tableName("PURCHASEORDER")
+                .actionType("APPROVE")
+                .recordId(purchaseOrderId)
+                .actionDate(LocalDateTime.now())
+                .description("Approved purchase order " + purchaseOrderId)
+                .build());
+
+        return purchaseOrderRepository.save(purchaseOrder);
     }
 
     public PurchaseOrder receivePurchaseOrder(Long purchaseOrderId, Long employeeId) {
@@ -196,5 +239,18 @@ public class PurchaseOrderService {
         }
 
         return entityManager.getReference(Employee.class, employeeId);
+    }
+
+    private void applyApprovalStatus(PurchaseOrder purchaseOrder) {
+        if (purchaseOrder.getStatus() == PurchaseOrderStatus.Received
+                || purchaseOrder.getStatus() == PurchaseOrderStatus.Cancelled
+                || purchaseOrder.getStatus() == PurchaseOrderStatus.Approved) {
+            return;
+        }
+
+        BigDecimal totalAmount = purchaseOrder.getTotalAmount() == null ? BigDecimal.ZERO : purchaseOrder.getTotalAmount();
+        purchaseOrder.setStatus(totalAmount.compareTo(approvalThreshold) > 0
+                ? PurchaseOrderStatus.PendingApproval
+                : PurchaseOrderStatus.Pending);
     }
 }

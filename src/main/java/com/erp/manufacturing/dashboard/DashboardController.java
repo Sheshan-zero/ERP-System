@@ -31,6 +31,13 @@ public class DashboardController {
         return ResponseEntity.ok(dashboardService.getLowStockItems());
     }
 
+    @GetMapping("/reorder-alerts")
+    @Operation(summary = "Get reorder alerts", description = "Returns items that have reached or fallen below reorder level.")
+    @ApiResponse(responseCode = "200", description = "Reorder alerts retrieved successfully")
+    public ResponseEntity<List<Item>> getReorderAlerts() {
+        return ResponseEntity.ok(dashboardService.getLowStockItems());
+    }
+
     @GetMapping("/top-selling-products")
     @Operation(summary = "Get top selling products", description = "Returns finished products ordered by total quantity sold descending.")
     @ApiResponse(responseCode = "200", description = "Top selling products retrieved successfully")

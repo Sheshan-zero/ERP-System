@@ -1,5 +1,6 @@
 package com.erp.manufacturing.inventorytransaction;
 
+import com.erp.manufacturing.inventorytransaction.dto.WarehouseStockDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,6 +29,11 @@ public class InventoryTransactionController {
     @GetMapping("/{id}")
     public ResponseEntity<InventoryTransaction> getInventoryTransactionById(@PathVariable Long id) {
         return ResponseEntity.ok(inventoryTransactionService.getInventoryTransactionById(id));
+    }
+
+    @GetMapping("/stock-by-warehouse")
+    public ResponseEntity<List<WarehouseStockDto>> getStockByWarehouse() {
+        return ResponseEntity.ok(inventoryTransactionService.getStockByWarehouse());
     }
 
     @PostMapping

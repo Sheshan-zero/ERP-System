@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/sales-orders")
@@ -43,6 +44,16 @@ public class SalesOrderController {
             @Valid @RequestBody SalesOrder salesOrder
     ) {
         return ResponseEntity.ok(salesOrderService.updateSalesOrder(id, salesOrder));
+    }
+
+    @PostMapping("/{id}/deliver")
+    public ResponseEntity<Map<String, Object>> deliverSalesOrder(@PathVariable Long id) {
+        SalesOrder deliveredSalesOrder = salesOrderService.deliverSalesOrder(id);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Sales order delivered successfully",
+                "salesOrder", deliveredSalesOrder
+        ));
     }
 
     @DeleteMapping("/{id}")

@@ -1,10 +1,20 @@
 package com.erp.manufacturing.salesorder;
 
+import com.erp.manufacturing.auditlog.AuditLog;
+import com.erp.manufacturing.auditlog.AuditLogRepository;
+import com.erp.manufacturing.employee.Employee;
+import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
+import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
+import com.erp.manufacturing.item.Item;
+import com.erp.manufacturing.item.ItemRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +23,14 @@ import java.util.List;
 @Transactional
 public class SalesOrderService {
 
+    private static final String DELIVERED_STATUS = "Delivered";
+    private static final String STOCK_OUT_TRANSACTION_TYPE = "Stock Out";
+
     private final SalesOrderRepository salesOrderRepository;
+    private final ItemRepository itemRepository;
+    private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final AuditLogRepository auditLogRepository;
+    private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public List<SalesOrder> getAllSalesOrders() {
@@ -71,6 +88,51 @@ public class SalesOrderService {
         salesOrderRepository.deleteById(id);
     }
 
+    public SalesOrder deliverSalesOrder(Long salesOrderId) {
+        SalesOrder salesOrder = getSalesOrderById(salesOrderId);
+
+        if (DELIVERED_STATUS.equalsIgnoreCase(salesOrder.getOrderStatus())) {
+            throw new IllegalArgumentException("Sales order is already delivered");
+        }
+
+        Employee employee = getEmployeeReference(salesOrder.getEmployeeId());
+        LocalDateTime now = LocalDateTime.now();
+
+        for (SalesOrderItem salesOrderItem : salesOrder.getSalesOrderItems()) {
+            Item finishedProduct = getItem(
+                    salesOrderItem.getFinishedProductId(),
+                    "Finished product not found with id: "
+            );
+            BigDecimal quantity = requirePositiveQuantity(
+                    salesOrderItem.getQuantity(),
+                    "Sales order item quantity must be greater than 0"
+            );
+
+            finishedProduct.setCurrentStock(getCurrentStock(finishedProduct).subtract(quantity));
+            inventoryTransactionRepository.save(InventoryTransaction.builder()
+                    .item(finishedProduct)
+                    .employee(employee)
+                    .transactionType(STOCK_OUT_TRANSACTION_TYPE)
+                    .quantity(quantity)
+                    .transactionDate(now)
+                    .remarks("Sales order " + salesOrderId + " delivered")
+                    .build());
+        }
+
+        salesOrder.setOrderStatus(DELIVERED_STATUS);
+
+        auditLogRepository.save(AuditLog.builder()
+                .employee(employee)
+                .tableName("SALESORDER")
+                .actionType("DELIVER")
+                .recordId(salesOrderId)
+                .actionDate(now)
+                .description("Delivered sales order " + salesOrderId)
+                .build());
+
+        return salesOrderRepository.save(salesOrder);
+    }
+
     private void attachChildren(SalesOrder salesOrder) {
         if (salesOrder.getSalesOrderItems() == null) {
             salesOrder.setSalesOrderItems(new ArrayList<>());
@@ -85,5 +147,34 @@ public class SalesOrderService {
         for (Payment payment : salesOrder.getPayments()) {
             payment.setSalesOrder(salesOrder);
         }
+    }
+
+    private Item getItem(Long itemId, String messagePrefix) {
+        if (itemId == null) {
+            throw new IllegalArgumentException(messagePrefix + "null");
+        }
+
+        return itemRepository.findById(itemId)
+                .orElseThrow(() -> new EntityNotFoundException(messagePrefix + itemId));
+    }
+
+    private Employee getEmployeeReference(Long employeeId) {
+        if (employeeId == null) {
+            return null;
+        }
+
+        return entityManager.getReference(Employee.class, employeeId);
+    }
+
+    private BigDecimal getCurrentStock(Item item) {
+        return item.getCurrentStock() == null ? BigDecimal.ZERO : item.getCurrentStock();
+    }
+
+    private BigDecimal requirePositiveQuantity(BigDecimal quantity, String message) {
+        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(message);
+        }
+
+        return quantity;
     }
 }

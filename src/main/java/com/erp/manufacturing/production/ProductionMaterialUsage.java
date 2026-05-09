@@ -11,6 +11,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,9 +42,11 @@ public class ProductionMaterialUsage {
     private ProductionOrder productionOrder;
 
     @Column(name = "RAW_MATERIAL_ID")
+    @NotNull(message = "Raw material ID is required")
     private Long rawMaterialId;
 
-    @DecimalMin(value = "0.00", message = "Quantity used cannot be negative")
+    @NotNull(message = "Quantity used is required")
+    @Positive(message = "Quantity used must be greater than 0")
     @Column(name = "QUANTITY_USED", precision = 10, scale = 2)
     private BigDecimal quantityUsed;
 

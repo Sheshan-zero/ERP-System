@@ -2,6 +2,8 @@ package com.erp.manufacturing.billofmaterial;
 
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
+import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.ResourceNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,7 +41,7 @@ public class BillOfMaterialService {
 
     public BillOfMaterial createBillOfMaterial(BillOfMaterial billOfMaterial) {
         if (billOfMaterial.getBomId() != null && billOfMaterialRepository.existsById(billOfMaterial.getBomId())) {
-            throw new IllegalArgumentException("Bill of material already exists with id: " + billOfMaterial.getBomId());
+            throw new BusinessException("Bill of material already exists with id: " + billOfMaterial.getBomId());
         }
 
         validateAndAttachItems(billOfMaterial);
@@ -78,10 +80,10 @@ public class BillOfMaterialService {
                 .orElseThrow(() -> new EntityNotFoundException("Raw material not found with id: " + rawMaterialId));
 
         if (!FINISHED_PRODUCT_TYPE.equals(finishedProduct.getItemType())) {
-            throw new IllegalArgumentException("Finished product must reference an item with item_type = 'FinishedProduct'");
+            throw new BusinessException("Finished product must reference an item with item_type = 'FinishedProduct'");
         }
         if (!RAW_MATERIAL_TYPE.equals(rawMaterial.getItemType())) {
-            throw new IllegalArgumentException("Raw material must reference an item with item_type = 'RawMaterial'");
+            throw new BusinessException("Raw material must reference an item with item_type = 'RawMaterial'");
         }
 
         billOfMaterial.setFinishedProduct(finishedProduct);
@@ -91,17 +93,17 @@ public class BillOfMaterialService {
     private void validateQuantities(BillOfMaterial billOfMaterial) {
         if (billOfMaterial.getRequiredQuantity() == null
                 || billOfMaterial.getRequiredQuantity().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Required quantity must be greater than 0");
+            throw new BusinessException("Required quantity must be greater than 0");
         }
         if (billOfMaterial.getWastagePercentage() != null
                 && billOfMaterial.getWastagePercentage().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Wastage percentage cannot be negative");
+            throw new BusinessException("Wastage percentage cannot be negative");
         }
     }
 
     private Long getItemId(Item item, String message) {
         if (item == null || item.getItemId() == null) {
-            throw new IllegalArgumentException(message);
+            throw new BusinessException(message);
         }
 
         return item.getItemId();

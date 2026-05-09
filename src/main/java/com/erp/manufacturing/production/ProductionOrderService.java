@@ -2,6 +2,8 @@ package com.erp.manufacturing.production;
 
 import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
+import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.employee.Employee;
 import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
@@ -41,13 +43,13 @@ public class ProductionOrderService {
     @Transactional(readOnly = true)
     public ProductionOrder getProductionOrderById(Long id) {
         return productionOrderRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Production order not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Production order not found with id: " + id));
     }
 
     public ProductionOrder createProductionOrder(ProductionOrder productionOrder) {
         if (productionOrder.getProductionOrderId() != null
                 && productionOrderRepository.existsById(productionOrder.getProductionOrderId())) {
-            throw new IllegalArgumentException("Production order already exists with id: "
+            throw new BusinessException("Production order already exists with id: "
                     + productionOrder.getProductionOrderId());
         }
 
@@ -89,7 +91,7 @@ public class ProductionOrderService {
 
     public void deleteProductionOrder(Long id) {
         if (!productionOrderRepository.existsById(id)) {
-            throw new EntityNotFoundException("Production order not found with id: " + id);
+            throw new ResourceNotFoundException("Production order not found with id: " + id);
         }
 
         productionOrderRepository.deleteById(id);
@@ -99,14 +101,14 @@ public class ProductionOrderService {
         ProductionOrder productionOrder = getProductionOrderById(productionOrderId);
 
         if (COMPLETED_STATUS.equalsIgnoreCase(productionOrder.getStatus())) {
-            throw new IllegalArgumentException("Production order is already completed");
+            throw new BusinessException("Production order is already completed");
         }
         if (productionOrder.getQuantityToProduce() == null
                 || productionOrder.getQuantityToProduce().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Quantity to produce must be greater than 0");
+            throw new BusinessException("Quantity to produce must be greater than 0");
         }
         if (productionOrder.getFinishedProductId() == null) {
-            throw new IllegalArgumentException("Finished product is required");
+            throw new BusinessException("Finished product is required");
         }
 
         Employee employee = getEmployeeReference(productionOrder.getEmployeeId());
@@ -176,11 +178,11 @@ public class ProductionOrderService {
 
     private Item getItem(Long itemId, String messagePrefix) {
         if (itemId == null) {
-            throw new IllegalArgumentException(messagePrefix + "null");
+            throw new BusinessException(messagePrefix + "null");
         }
 
         return itemRepository.findById(itemId)
-                .orElseThrow(() -> new EntityNotFoundException(messagePrefix + itemId));
+                .orElseThrow(() -> new ResourceNotFoundException(messagePrefix + itemId));
     }
 
     private Employee getEmployeeReference(Long employeeId) {
@@ -197,7 +199,7 @@ public class ProductionOrderService {
 
     private BigDecimal requirePositiveQuantity(BigDecimal quantity, String message) {
         if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException(message);
+            throw new BusinessException(message);
         }
 
         return quantity;

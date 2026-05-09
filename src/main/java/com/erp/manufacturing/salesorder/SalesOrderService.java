@@ -2,6 +2,8 @@ package com.erp.manufacturing.salesorder;
 
 import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
+import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.employee.Employee;
 import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
@@ -40,12 +42,12 @@ public class SalesOrderService {
     @Transactional(readOnly = true)
     public SalesOrder getSalesOrderById(Long id) {
         return salesOrderRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Sales order not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Sales order not found with id: " + id));
     }
 
     public SalesOrder createSalesOrder(SalesOrder salesOrder) {
         if (salesOrder.getSalesOrderId() != null && salesOrderRepository.existsById(salesOrder.getSalesOrderId())) {
-            throw new IllegalArgumentException("Sales order already exists with id: " + salesOrder.getSalesOrderId());
+            throw new BusinessException("Sales order already exists with id: " + salesOrder.getSalesOrderId());
         }
 
         attachChildren(salesOrder);
@@ -82,7 +84,7 @@ public class SalesOrderService {
 
     public void deleteSalesOrder(Long id) {
         if (!salesOrderRepository.existsById(id)) {
-            throw new EntityNotFoundException("Sales order not found with id: " + id);
+            throw new ResourceNotFoundException("Sales order not found with id: " + id);
         }
 
         salesOrderRepository.deleteById(id);
@@ -92,7 +94,7 @@ public class SalesOrderService {
         SalesOrder salesOrder = getSalesOrderById(salesOrderId);
 
         if (DELIVERED_STATUS.equalsIgnoreCase(salesOrder.getOrderStatus())) {
-            throw new IllegalArgumentException("Sales order is already delivered");
+            throw new BusinessException("Sales order is already delivered");
         }
 
         Employee employee = getEmployeeReference(salesOrder.getEmployeeId());
@@ -151,11 +153,11 @@ public class SalesOrderService {
 
     private Item getItem(Long itemId, String messagePrefix) {
         if (itemId == null) {
-            throw new IllegalArgumentException(messagePrefix + "null");
+            throw new BusinessException(messagePrefix + "null");
         }
 
         return itemRepository.findById(itemId)
-                .orElseThrow(() -> new EntityNotFoundException(messagePrefix + itemId));
+                .orElseThrow(() -> new ResourceNotFoundException(messagePrefix + itemId));
     }
 
     private Employee getEmployeeReference(Long employeeId) {
@@ -172,7 +174,7 @@ public class SalesOrderService {
 
     private BigDecimal requirePositiveQuantity(BigDecimal quantity, String message) {
         if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException(message);
+            throw new BusinessException(message);
         }
 
         return quantity;

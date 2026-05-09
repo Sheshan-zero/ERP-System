@@ -1,0 +1,56 @@
+package com.erp.manufacturing.inventorytransaction;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/inventory-transactions")
+@RequiredArgsConstructor
+public class InventoryTransactionController {
+
+    private final InventoryTransactionService inventoryTransactionService;
+
+    @GetMapping
+    public ResponseEntity<List<InventoryTransaction>> getAllInventoryTransactions() {
+        return ResponseEntity.ok(inventoryTransactionService.getAllInventoryTransactions());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<InventoryTransaction> getInventoryTransactionById(@PathVariable Long id) {
+        return ResponseEntity.ok(inventoryTransactionService.getInventoryTransactionById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<InventoryTransaction> createInventoryTransaction(
+            @Valid @RequestBody InventoryTransaction inventoryTransaction
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(inventoryTransactionService.createInventoryTransaction(inventoryTransaction));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<InventoryTransaction> updateInventoryTransaction(
+            @PathVariable Long id,
+            @Valid @RequestBody InventoryTransaction inventoryTransaction
+    ) {
+        return ResponseEntity.ok(inventoryTransactionService.updateInventoryTransaction(id, inventoryTransaction));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteInventoryTransaction(@PathVariable Long id) {
+        inventoryTransactionService.deleteInventoryTransaction(id);
+        return ResponseEntity.noContent().build();
+    }
+}

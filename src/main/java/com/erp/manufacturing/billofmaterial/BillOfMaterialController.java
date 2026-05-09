@@ -1,0 +1,61 @@
+package com.erp.manufacturing.billofmaterial;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/boms")
+@RequiredArgsConstructor
+public class BillOfMaterialController {
+
+    private final BillOfMaterialService billOfMaterialService;
+
+    @GetMapping
+    public ResponseEntity<List<BillOfMaterial>> getAllBillOfMaterials() {
+        return ResponseEntity.ok(billOfMaterialService.getAllBillOfMaterials());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<BillOfMaterial> getBillOfMaterialById(@PathVariable Long id) {
+        return ResponseEntity.ok(billOfMaterialService.getBillOfMaterialById(id));
+    }
+
+    @GetMapping("/product/{finishedProductId}")
+    public ResponseEntity<List<BillOfMaterial>> getBillOfMaterialsByFinishedProductId(
+            @PathVariable Long finishedProductId
+    ) {
+        return ResponseEntity.ok(billOfMaterialService.getBillOfMaterialsByFinishedProductId(finishedProductId));
+    }
+
+    @PostMapping
+    public ResponseEntity<BillOfMaterial> createBillOfMaterial(@Valid @RequestBody BillOfMaterial billOfMaterial) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(billOfMaterialService.createBillOfMaterial(billOfMaterial));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<BillOfMaterial> updateBillOfMaterial(
+            @PathVariable Long id,
+            @Valid @RequestBody BillOfMaterial billOfMaterial
+    ) {
+        return ResponseEntity.ok(billOfMaterialService.updateBillOfMaterial(id, billOfMaterial));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteBillOfMaterial(@PathVariable Long id) {
+        billOfMaterialService.deleteBillOfMaterial(id);
+        return ResponseEntity.noContent().build();
+    }
+}

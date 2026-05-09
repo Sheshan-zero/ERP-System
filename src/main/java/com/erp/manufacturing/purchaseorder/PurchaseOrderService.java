@@ -4,11 +4,12 @@ import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
 import com.erp.manufacturing.common.BusinessException;
 import com.erp.manufacturing.common.ResourceNotFoundException;
+import com.erp.manufacturing.employee.Employee;
 import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
-import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class PurchaseOrderService {
     private final ItemRepository itemRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final AuditLogRepository auditLogRepository;
+    private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public List<PurchaseOrder> getAllPurchaseOrders() {
@@ -49,7 +51,7 @@ public class PurchaseOrderService {
                     + purchaseOrder.getPurchaseOrderId());
         }
 
-        attachItems(purchaseOrder);
+        attachItemsAndCalculateTotals(purchaseOrder);
         return purchaseOrderRepository.save(purchaseOrder);
     }
 
@@ -57,18 +59,20 @@ public class PurchaseOrderService {
         PurchaseOrder existingPurchaseOrder = getPurchaseOrderById(id);
 
         existingPurchaseOrder.setSupplierId(purchaseOrder.getSupplierId());
+        existingPurchaseOrder.setEmployeeId(purchaseOrder.getEmployeeId());
         existingPurchaseOrder.setOrderDate(purchaseOrder.getOrderDate());
         existingPurchaseOrder.setExpectedDate(purchaseOrder.getExpectedDate());
         existingPurchaseOrder.setStatus(purchaseOrder.getStatus());
-        existingPurchaseOrder.setTotalAmount(purchaseOrder.getTotalAmount());
 
         existingPurchaseOrder.getPurchaseOrderItems().clear();
         if (purchaseOrder.getPurchaseOrderItems() != null) {
             for (PurchaseOrderItem item : purchaseOrder.getPurchaseOrderItems()) {
                 item.setPurchaseOrder(existingPurchaseOrder);
+                calculateLineTotal(item);
                 existingPurchaseOrder.getPurchaseOrderItems().add(item);
             }
         }
+        existingPurchaseOrder.setTotalAmount(calculateTotalAmount(existingPurchaseOrder.getPurchaseOrderItems()));
 
         return purchaseOrderRepository.save(existingPurchaseOrder);
     }
@@ -81,7 +85,7 @@ public class PurchaseOrderService {
         purchaseOrderRepository.deleteById(id);
     }
 
-    public PurchaseOrder receivePurchaseOrder(Long purchaseOrderId) {
+    public PurchaseOrder receivePurchaseOrder(Long purchaseOrderId, Long employeeId) {
         PurchaseOrder purchaseOrder = getPurchaseOrderById(purchaseOrderId);
 
         if (RECEIVED_STATUS.equalsIgnoreCase(purchaseOrder.getStatus())) {
@@ -89,6 +93,8 @@ public class PurchaseOrderService {
         }
 
         LocalDateTime now = LocalDateTime.now();
+        Long auditEmployeeId = employeeId != null ? employeeId : purchaseOrder.getEmployeeId();
+        Employee employee = getEmployeeReference(auditEmployeeId);
 
         for (PurchaseOrderItem purchaseOrderItem : purchaseOrder.getPurchaseOrderItems()) {
             Item rawMaterial = getItem(
@@ -103,6 +109,7 @@ public class PurchaseOrderService {
             rawMaterial.setCurrentStock(getCurrentStock(rawMaterial).add(quantity));
             inventoryTransactionRepository.save(InventoryTransaction.builder()
                     .item(rawMaterial)
+                    .employee(employee)
                     .transactionType(STOCK_IN_TRANSACTION_TYPE)
                     .quantity(quantity)
                     .transactionDate(now)
@@ -113,6 +120,7 @@ public class PurchaseOrderService {
         purchaseOrder.setStatus(RECEIVED_STATUS);
 
         auditLogRepository.save(AuditLog.builder()
+                .employee(employee)
                 .tableName("PURCHASEORDER")
                 .actionType("RECEIVE")
                 .recordId(purchaseOrderId)
@@ -123,15 +131,18 @@ public class PurchaseOrderService {
         return purchaseOrderRepository.save(purchaseOrder);
     }
 
-    private void attachItems(PurchaseOrder purchaseOrder) {
+    private void attachItemsAndCalculateTotals(PurchaseOrder purchaseOrder) {
         if (purchaseOrder.getPurchaseOrderItems() == null) {
             purchaseOrder.setPurchaseOrderItems(new ArrayList<>());
+            purchaseOrder.setTotalAmount(BigDecimal.ZERO);
             return;
         }
 
         for (PurchaseOrderItem item : purchaseOrder.getPurchaseOrderItems()) {
             item.setPurchaseOrder(purchaseOrder);
+            calculateLineTotal(item);
         }
+        purchaseOrder.setTotalAmount(calculateTotalAmount(purchaseOrder.getPurchaseOrderItems()));
     }
 
     private Item getItem(Long itemId, String messagePrefix) {
@@ -153,5 +164,32 @@ public class PurchaseOrderService {
         }
 
         return quantity;
+    }
+
+    private void calculateLineTotal(PurchaseOrderItem item) {
+        BigDecimal quantity = requirePositiveQuantity(
+                item.getQuantity(),
+                "Purchase order item quantity must be greater than 0"
+        );
+        BigDecimal unitPrice = requirePositiveQuantity(
+                item.getUnitPrice(),
+                "Purchase order item unit price must be greater than 0"
+        );
+
+        item.setLineTotal(quantity.multiply(unitPrice));
+    }
+
+    private BigDecimal calculateTotalAmount(List<PurchaseOrderItem> items) {
+        return items.stream()
+                .map(PurchaseOrderItem::getLineTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private Employee getEmployeeReference(Long employeeId) {
+        if (employeeId == null) {
+            return null;
+        }
+
+        return entityManager.getReference(Employee.class, employeeId);
     }
 }

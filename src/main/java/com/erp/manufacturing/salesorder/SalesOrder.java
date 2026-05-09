@@ -52,7 +52,6 @@ public class SalesOrder {
     @Column(name = "ORDER_STATUS", length = 30)
     private String orderStatus;
 
-    @DecimalMin(value = "0.00", message = "Total amount cannot be negative")
     @Column(name = "TOTAL_AMOUNT", precision = 12, scale = 2)
     private BigDecimal totalAmount;
 

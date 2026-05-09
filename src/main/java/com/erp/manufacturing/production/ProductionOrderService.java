@@ -10,7 +10,6 @@ import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -117,6 +116,7 @@ public class ProductionOrderService {
         for (ProductionMaterialUsage usage : productionOrder.getMaterialUsages()) {
             Item rawMaterial = getItem(usage.getRawMaterialId(), "Raw material not found with id: ");
             BigDecimal quantityUsed = requirePositiveQuantity(usage.getQuantityUsed(), "Quantity used must be greater than 0");
+            ensureStockAvailable(rawMaterial, quantityUsed);
 
             rawMaterial.setCurrentStock(getCurrentStock(rawMaterial).subtract(quantityUsed));
             inventoryTransactionRepository.save(InventoryTransaction.builder()
@@ -203,5 +203,11 @@ public class ProductionOrderService {
         }
 
         return quantity;
+    }
+
+    private void ensureStockAvailable(Item item, BigDecimal quantity) {
+        if (getCurrentStock(item).compareTo(quantity) < 0) {
+            throw new BusinessException("Insufficient stock for item id: " + item.getItemId());
+        }
     }
 }

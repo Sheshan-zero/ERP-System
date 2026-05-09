@@ -10,7 +10,6 @@ import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +49,7 @@ public class SalesOrderService {
             throw new BusinessException("Sales order already exists with id: " + salesOrder.getSalesOrderId());
         }
 
-        attachChildren(salesOrder);
+        attachChildrenAndCalculateTotals(salesOrder);
         return salesOrderRepository.save(salesOrder);
     }
 
@@ -61,15 +60,16 @@ public class SalesOrderService {
         existingSalesOrder.setEmployeeId(salesOrder.getEmployeeId());
         existingSalesOrder.setOrderDate(salesOrder.getOrderDate());
         existingSalesOrder.setOrderStatus(salesOrder.getOrderStatus());
-        existingSalesOrder.setTotalAmount(salesOrder.getTotalAmount());
 
         existingSalesOrder.getSalesOrderItems().clear();
         if (salesOrder.getSalesOrderItems() != null) {
             for (SalesOrderItem item : salesOrder.getSalesOrderItems()) {
                 item.setSalesOrder(existingSalesOrder);
+                calculateLineTotal(item);
                 existingSalesOrder.getSalesOrderItems().add(item);
             }
         }
+        existingSalesOrder.setTotalAmount(calculateTotalAmount(existingSalesOrder.getSalesOrderItems()));
 
         existingSalesOrder.getPayments().clear();
         if (salesOrder.getPayments() != null) {
@@ -109,6 +109,7 @@ public class SalesOrderService {
                     salesOrderItem.getQuantity(),
                     "Sales order item quantity must be greater than 0"
             );
+            ensureStockAvailable(finishedProduct, quantity);
 
             finishedProduct.setCurrentStock(getCurrentStock(finishedProduct).subtract(quantity));
             inventoryTransactionRepository.save(InventoryTransaction.builder()
@@ -135,7 +136,7 @@ public class SalesOrderService {
         return salesOrderRepository.save(salesOrder);
     }
 
-    private void attachChildren(SalesOrder salesOrder) {
+    private void attachChildrenAndCalculateTotals(SalesOrder salesOrder) {
         if (salesOrder.getSalesOrderItems() == null) {
             salesOrder.setSalesOrderItems(new ArrayList<>());
         }
@@ -145,10 +146,12 @@ public class SalesOrderService {
 
         for (SalesOrderItem item : salesOrder.getSalesOrderItems()) {
             item.setSalesOrder(salesOrder);
+            calculateLineTotal(item);
         }
         for (Payment payment : salesOrder.getPayments()) {
             payment.setSalesOrder(salesOrder);
         }
+        salesOrder.setTotalAmount(calculateTotalAmount(salesOrder.getSalesOrderItems()));
     }
 
     private Item getItem(Long itemId, String messagePrefix) {
@@ -178,5 +181,30 @@ public class SalesOrderService {
         }
 
         return quantity;
+    }
+
+    private void ensureStockAvailable(Item item, BigDecimal quantity) {
+        if (getCurrentStock(item).compareTo(quantity) < 0) {
+            throw new BusinessException("Insufficient stock for item id: " + item.getItemId());
+        }
+    }
+
+    private void calculateLineTotal(SalesOrderItem item) {
+        BigDecimal quantity = requirePositiveQuantity(
+                item.getQuantity(),
+                "Sales order item quantity must be greater than 0"
+        );
+        BigDecimal unitPrice = requirePositiveQuantity(
+                item.getUnitPrice(),
+                "Sales order item unit price must be greater than 0"
+        );
+
+        item.setLineTotal(quantity.multiply(unitPrice));
+    }
+
+    private BigDecimal calculateTotalAmount(List<SalesOrderItem> items) {
+        return items.stream()
+                .map(SalesOrderItem::getLineTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

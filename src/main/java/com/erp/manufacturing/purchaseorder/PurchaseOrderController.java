@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -75,8 +76,11 @@ public class PurchaseOrderController {
             @ApiResponse(responseCode = "400", description = "Purchase order cannot be received"),
             @ApiResponse(responseCode = "404", description = "Purchase order not found")
     })
-    public ResponseEntity<Map<String, Object>> receivePurchaseOrder(@PathVariable Long id) {
-        PurchaseOrder receivedPurchaseOrder = purchaseOrderService.receivePurchaseOrder(id);
+    public ResponseEntity<Map<String, Object>> receivePurchaseOrder(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long employeeId
+    ) {
+        PurchaseOrder receivedPurchaseOrder = purchaseOrderService.receivePurchaseOrder(id, employeeId);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Purchase order received successfully",

@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
@@ -42,6 +43,9 @@ public class PurchaseOrder {
     @Column(name = "SUPPLIER_ID")
     private Long supplierId;
 
+    @Transient
+    private Long employeeId;
+
     @Column(name = "ORDER_DATE")
     private LocalDateTime orderDate;
 
@@ -52,7 +56,6 @@ public class PurchaseOrder {
     @Column(name = "STATUS", length = 30)
     private String status;
 
-    @DecimalMin(value = "0.00", message = "Total amount cannot be negative")
     @Column(name = "TOTAL_AMOUNT", precision = 12, scale = 2)
     private BigDecimal totalAmount;
 

@@ -2,6 +2,8 @@ package com.erp.manufacturing.purchaseorder;
 
 import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
+import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
 import com.erp.manufacturing.item.Item;
@@ -37,13 +39,13 @@ public class PurchaseOrderService {
     @Transactional(readOnly = true)
     public PurchaseOrder getPurchaseOrderById(Long id) {
         return purchaseOrderRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Purchase order not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Purchase order not found with id: " + id));
     }
 
     public PurchaseOrder createPurchaseOrder(PurchaseOrder purchaseOrder) {
         if (purchaseOrder.getPurchaseOrderId() != null
                 && purchaseOrderRepository.existsById(purchaseOrder.getPurchaseOrderId())) {
-            throw new IllegalArgumentException("Purchase order already exists with id: "
+            throw new BusinessException("Purchase order already exists with id: "
                     + purchaseOrder.getPurchaseOrderId());
         }
 
@@ -73,7 +75,7 @@ public class PurchaseOrderService {
 
     public void deletePurchaseOrder(Long id) {
         if (!purchaseOrderRepository.existsById(id)) {
-            throw new EntityNotFoundException("Purchase order not found with id: " + id);
+            throw new ResourceNotFoundException("Purchase order not found with id: " + id);
         }
 
         purchaseOrderRepository.deleteById(id);
@@ -83,7 +85,7 @@ public class PurchaseOrderService {
         PurchaseOrder purchaseOrder = getPurchaseOrderById(purchaseOrderId);
 
         if (RECEIVED_STATUS.equalsIgnoreCase(purchaseOrder.getStatus())) {
-            throw new IllegalArgumentException("Purchase order is already received");
+            throw new BusinessException("Purchase order is already received");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -134,11 +136,11 @@ public class PurchaseOrderService {
 
     private Item getItem(Long itemId, String messagePrefix) {
         if (itemId == null) {
-            throw new IllegalArgumentException(messagePrefix + "null");
+            throw new BusinessException(messagePrefix + "null");
         }
 
         return itemRepository.findById(itemId)
-                .orElseThrow(() -> new EntityNotFoundException(messagePrefix + itemId));
+                .orElseThrow(() -> new ResourceNotFoundException(messagePrefix + itemId));
     }
 
     private BigDecimal getCurrentStock(Item item) {
@@ -147,7 +149,7 @@ public class PurchaseOrderService {
 
     private BigDecimal requirePositiveQuantity(BigDecimal quantity, String message) {
         if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException(message);
+            throw new BusinessException(message);
         }
 
         return quantity;

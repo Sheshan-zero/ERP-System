@@ -13,6 +13,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,6 +41,7 @@ public class InventoryTransaction {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ITEM_ID")
+    @NotNull(message = "Item is required")
     private Item item;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -53,7 +56,8 @@ public class InventoryTransaction {
     @Column(name = "TRANSACTION_TYPE", length = 30)
     private String transactionType;
 
-    @DecimalMin(value = "0.00", message = "Quantity cannot be negative")
+    @NotNull(message = "Quantity is required")
+    @Positive(message = "Quantity must be greater than 0")
     @Column(name = "QUANTITY", precision = 10, scale = 2)
     private BigDecimal quantity;
 

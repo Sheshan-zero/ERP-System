@@ -11,6 +11,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -35,13 +37,16 @@ public class BillOfMaterial {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "FINISHED_PRODUCT_ID")
+    @NotNull(message = "Finished product is required")
     private Item finishedProduct;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "RAW_MATERIAL_ID")
+    @NotNull(message = "Raw material is required")
     private Item rawMaterial;
 
-    @DecimalMin(value = "0.01", message = "Required quantity must be greater than 0")
+    @NotNull(message = "Required quantity is required")
+    @Positive(message = "Required quantity must be greater than 0")
     @Column(name = "REQUIRED_QUANTITY", precision = 10, scale = 2)
     private BigDecimal requiredQuantity;
 

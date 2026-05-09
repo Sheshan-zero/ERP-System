@@ -11,6 +11,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -39,13 +41,16 @@ public class SalesOrderItem {
     private SalesOrder salesOrder;
 
     @Column(name = "FINISHED_PRODUCT_ID")
+    @NotNull(message = "Finished product ID is required")
     private Long finishedProductId;
 
-    @DecimalMin(value = "0.00", message = "Quantity cannot be negative")
+    @NotNull(message = "Quantity is required")
+    @Positive(message = "Quantity must be greater than 0")
     @Column(name = "QUANTITY", precision = 10, scale = 2)
     private BigDecimal quantity;
 
-    @DecimalMin(value = "0.00", message = "Unit price cannot be negative")
+    @NotNull(message = "Unit price is required")
+    @Positive(message = "Unit price must be greater than 0")
     @Column(name = "UNIT_PRICE", precision = 10, scale = 2)
     private BigDecimal unitPrice;
 

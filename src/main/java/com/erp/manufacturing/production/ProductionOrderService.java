@@ -5,6 +5,9 @@ import com.erp.manufacturing.auditlog.AuditLogRepository;
 import com.erp.manufacturing.billofmaterial.BillOfMaterial;
 import com.erp.manufacturing.billofmaterial.BillOfMaterialRepository;
 import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.constants.DatabaseTableNames;
+import com.erp.manufacturing.common.enums.AuditActionType;
+import com.erp.manufacturing.common.enums.InventoryTransactionType;
 import com.erp.manufacturing.common.enums.ProductionOrderStatus;
 import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.employee.Employee;
@@ -12,6 +15,7 @@ import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
+import com.erp.manufacturing.item.ItemStockService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,11 +33,9 @@ import java.util.List;
 @Transactional
 public class ProductionOrderService {
 
-    private static final String STOCK_OUT_TRANSACTION_TYPE = "Stock Out";
-    private static final String STOCK_IN_TRANSACTION_TYPE = "Stock In";
-
     private final ProductionOrderRepository productionOrderRepository;
     private final ItemRepository itemRepository;
+    private final ItemStockService itemStockService;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final AuditLogRepository auditLogRepository;
     private final BillOfMaterialRepository billOfMaterialRepository;
@@ -125,13 +127,11 @@ public class ProductionOrderService {
         for (ProductionMaterialUsage usage : productionOrder.getMaterialUsages()) {
             Item rawMaterial = getItem(usage.getRawMaterialId(), "Raw material not found with id: ");
             BigDecimal quantityUsed = requirePositiveQuantity(usage.getQuantityUsed(), "Quantity used must be greater than 0");
-            ensureStockAvailable(rawMaterial, quantityUsed);
-
-            rawMaterial.setCurrentStock(getCurrentStock(rawMaterial).subtract(quantityUsed));
+            Item updatedRawMaterial = itemStockService.decreaseStock(rawMaterial.getItemId(), quantityUsed);
             inventoryTransactionRepository.save(InventoryTransaction.builder()
-                    .item(rawMaterial)
+                    .item(updatedRawMaterial)
                     .employee(employee)
-                    .transactionType(STOCK_OUT_TRANSACTION_TYPE)
+                    .transactionType(InventoryTransactionType.StockOut.getValue())
                     .quantity(quantityUsed)
                     .transactionDate(now)
                     .remarks("Production order " + productionOrderId + " raw material usage")
@@ -144,11 +144,11 @@ public class ProductionOrderService {
         );
         BigDecimal producedQuantity = productionOrder.getQuantityToProduce();
 
-        finishedProduct.setCurrentStock(getCurrentStock(finishedProduct).add(producedQuantity));
+        Item updatedFinishedProduct = itemStockService.increaseStock(finishedProduct.getItemId(), producedQuantity);
         inventoryTransactionRepository.save(InventoryTransaction.builder()
-                .item(finishedProduct)
+                .item(updatedFinishedProduct)
                 .employee(employee)
-                .transactionType(STOCK_IN_TRANSACTION_TYPE)
+                .transactionType(InventoryTransactionType.StockIn.getValue())
                 .quantity(producedQuantity)
                 .transactionDate(now)
                 .remarks("Production order " + productionOrderId + " completed")
@@ -159,8 +159,8 @@ public class ProductionOrderService {
 
         auditLogRepository.save(AuditLog.builder()
                 .employee(employee)
-                .tableName("PRODUCTIONORDER")
-                .actionType("COMPLETE")
+                .tableName(DatabaseTableNames.PRODUCTION_ORDER)
+                .actionType(AuditActionType.COMPLETE.name())
                 .recordId(productionOrderId)
                 .actionDate(now)
                 .description("Completed production order " + productionOrderId)
@@ -212,12 +212,6 @@ public class ProductionOrderService {
         }
 
         return quantity;
-    }
-
-    private void ensureStockAvailable(Item item, BigDecimal quantity) {
-        if (getCurrentStock(item).compareTo(quantity) < 0) {
-            throw new BusinessException("Insufficient stock for item id: " + item.getItemId());
-        }
     }
 
     private void explodeBomIfNoMaterialUsage(ProductionOrder productionOrder) {

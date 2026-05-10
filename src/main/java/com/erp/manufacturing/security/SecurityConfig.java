@@ -1,7 +1,6 @@
 package com.erp.manufacturing.security;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -12,12 +11,9 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -60,32 +56,6 @@ public class SecurityConfig {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService);
         authenticationProvider.setPasswordEncoder(passwordEncoder);
         return authenticationProvider;
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService(
-            @Value("${app.security.admin-password:admin123}") String adminPassword,
-            @Value("${app.security.manager-password:manager123}") String managerPassword,
-            @Value("${app.security.user-password:user123}") String userPassword
-    ) {
-        PasswordEncoder encoder = passwordEncoder();
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password(encoder.encode(adminPassword))
-                .roles(UserRole.ADMIN.name())
-                .build();
-        UserDetails manager = User.builder()
-                .username("manager")
-                .password(encoder.encode(managerPassword))
-                .roles(UserRole.MANAGER.name())
-                .build();
-        UserDetails user = User.builder()
-                .username("user")
-                .password(encoder.encode(userPassword))
-                .roles(UserRole.USER.name())
-                .build();
-
-        return new InMemoryUserDetailsManager(admin, manager, user);
     }
 
     @Bean

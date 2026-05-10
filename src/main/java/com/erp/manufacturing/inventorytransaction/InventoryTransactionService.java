@@ -1,6 +1,7 @@
 package com.erp.manufacturing.inventorytransaction;
 
 import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.enums.InventoryTransactionType;
 import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.inventorytransaction.dto.WarehouseStockDto;
 import com.erp.manufacturing.item.Item;
@@ -18,8 +19,6 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 @Transactional
 public class InventoryTransactionService {
-
-    private static final String STOCK_OUT_TRANSACTION_TYPE = "Stock Out";
 
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final ItemRepository itemRepository;
@@ -48,7 +47,7 @@ public class InventoryTransactionService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Item not found with id: " + inventoryTransaction.getItem().getItemId()
                     ));
-            if (STOCK_OUT_TRANSACTION_TYPE.equalsIgnoreCase(inventoryTransaction.getTransactionType())) {
+            if (InventoryTransactionType.StockOut.getValue().equalsIgnoreCase(inventoryTransaction.getTransactionType())) {
                 ensureStockAvailable(item, inventoryTransaction.getQuantity());
             }
             inventoryTransaction.setItem(item);
@@ -65,8 +64,8 @@ public class InventoryTransactionService {
                                w.warehouse_id,
                                w.warehouse_name,
                                COALESCE(SUM(CASE
-                                   WHEN it.transaction_type = 'Stock In' THEN it.quantity
-                                   WHEN it.transaction_type = 'Stock Out' THEN -it.quantity
+                                   WHEN it.transaction_type = :stockIn THEN it.quantity
+                                   WHEN it.transaction_type = :stockOut THEN -it.quantity
                                    ELSE 0
                                END), 0) AS quantity_on_hand
                         FROM inventorytransaction it
@@ -75,6 +74,8 @@ public class InventoryTransactionService {
                         GROUP BY i.item_id, i.item_name, w.warehouse_id, w.warehouse_name
                         ORDER BY i.item_name, w.warehouse_name
                         """)
+                .setParameter("stockIn", InventoryTransactionType.StockIn.getValue())
+                .setParameter("stockOut", InventoryTransactionType.StockOut.getValue())
                 .getResultList();
 
         return rows.stream()

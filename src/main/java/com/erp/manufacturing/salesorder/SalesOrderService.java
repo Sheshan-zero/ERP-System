@@ -3,6 +3,9 @@ package com.erp.manufacturing.salesorder;
 import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
 import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.constants.DatabaseTableNames;
+import com.erp.manufacturing.common.enums.AuditActionType;
+import com.erp.manufacturing.common.enums.InventoryTransactionType;
 import com.erp.manufacturing.common.enums.SalesOrderStatus;
 import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.employee.Employee;
@@ -10,6 +13,7 @@ import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
+import com.erp.manufacturing.item.ItemStockService;
 import com.erp.manufacturing.salesorder.dto.SalesInvoiceDto;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -28,10 +32,9 @@ import java.util.List;
 @Transactional
 public class SalesOrderService {
 
-    private static final String STOCK_OUT_TRANSACTION_TYPE = "Stock Out";
-
     private final SalesOrderRepository salesOrderRepository;
     private final ItemRepository itemRepository;
+    private final ItemStockService itemStockService;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final AuditLogRepository auditLogRepository;
     private final EntityManager entityManager;
@@ -137,13 +140,11 @@ public class SalesOrderService {
                     salesOrderItem.getQuantity(),
                     "Sales order item quantity must be greater than 0"
             );
-            ensureStockAvailable(finishedProduct, quantity);
-
-            finishedProduct.setCurrentStock(getCurrentStock(finishedProduct).subtract(quantity));
+            Item updatedFinishedProduct = itemStockService.decreaseStock(finishedProduct.getItemId(), quantity);
             inventoryTransactionRepository.save(InventoryTransaction.builder()
-                    .item(finishedProduct)
+                    .item(updatedFinishedProduct)
                     .employee(employee)
-                    .transactionType(STOCK_OUT_TRANSACTION_TYPE)
+                    .transactionType(InventoryTransactionType.StockOut.getValue())
                     .quantity(quantity)
                     .transactionDate(now)
                     .remarks("Sales order " + salesOrderId + " delivered")
@@ -154,8 +155,8 @@ public class SalesOrderService {
 
         auditLogRepository.save(AuditLog.builder()
                 .employee(employee)
-                .tableName("SALESORDER")
-                .actionType("DELIVER")
+                .tableName(DatabaseTableNames.SALES_ORDER)
+                .actionType(AuditActionType.DELIVER.name())
                 .recordId(salesOrderId)
                 .actionDate(now)
                 .description("Delivered sales order " + salesOrderId)
@@ -209,12 +210,6 @@ public class SalesOrderService {
         }
 
         return quantity;
-    }
-
-    private void ensureStockAvailable(Item item, BigDecimal quantity) {
-        if (getCurrentStock(item).compareTo(quantity) < 0) {
-            throw new BusinessException("Insufficient stock for item id: " + item.getItemId());
-        }
     }
 
     private void calculateLineTotal(SalesOrderItem item) {

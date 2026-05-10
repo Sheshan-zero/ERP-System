@@ -3,6 +3,9 @@ package com.erp.manufacturing.purchaseorder;
 import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
 import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.constants.DatabaseTableNames;
+import com.erp.manufacturing.common.enums.AuditActionType;
+import com.erp.manufacturing.common.enums.InventoryTransactionType;
 import com.erp.manufacturing.common.enums.PurchaseOrderStatus;
 import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.employee.Employee;
@@ -10,6 +13,7 @@ import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
+import com.erp.manufacturing.item.ItemStockService;
 import com.erp.manufacturing.purchaseorder.dto.PurchaseBillDto;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +33,9 @@ import java.util.List;
 @Transactional
 public class PurchaseOrderService {
 
-    private static final String STOCK_IN_TRANSACTION_TYPE = "Stock In";
-
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final ItemRepository itemRepository;
+    private final ItemStockService itemStockService;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final AuditLogRepository auditLogRepository;
     private final EntityManager entityManager;
@@ -120,8 +123,8 @@ public class PurchaseOrderService {
 
         auditLogRepository.save(AuditLog.builder()
                 .employee(employee)
-                .tableName("PURCHASEORDER")
-                .actionType("APPROVE")
+                .tableName(DatabaseTableNames.PURCHASE_ORDER)
+                .actionType(AuditActionType.APPROVE.name())
                 .recordId(purchaseOrderId)
                 .actionDate(LocalDateTime.now())
                 .description("Approved purchase order " + purchaseOrderId)
@@ -154,11 +157,11 @@ public class PurchaseOrderService {
                     "Purchase order item quantity must be greater than 0"
             );
 
-            rawMaterial.setCurrentStock(getCurrentStock(rawMaterial).add(quantity));
+            Item updatedRawMaterial = itemStockService.increaseStock(rawMaterial.getItemId(), quantity);
             inventoryTransactionRepository.save(InventoryTransaction.builder()
-                    .item(rawMaterial)
+                    .item(updatedRawMaterial)
                     .employee(employee)
-                    .transactionType(STOCK_IN_TRANSACTION_TYPE)
+                    .transactionType(InventoryTransactionType.StockIn.getValue())
                     .quantity(quantity)
                     .transactionDate(now)
                     .remarks("Purchase order " + purchaseOrderId + " received")
@@ -169,8 +172,8 @@ public class PurchaseOrderService {
 
         auditLogRepository.save(AuditLog.builder()
                 .employee(employee)
-                .tableName("PURCHASEORDER")
-                .actionType("RECEIVE")
+                .tableName(DatabaseTableNames.PURCHASE_ORDER)
+                .actionType(AuditActionType.RECEIVE.name())
                 .recordId(purchaseOrderId)
                 .actionDate(now)
                 .description("Received purchase order " + purchaseOrderId)

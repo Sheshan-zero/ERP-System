@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -74,4 +75,8 @@ public class Item {
 
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
+
+    @Version
+    @Column(name = "VERSION")
+    private Long version;
 }

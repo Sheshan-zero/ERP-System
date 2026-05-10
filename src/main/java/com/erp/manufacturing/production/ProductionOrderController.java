@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
@@ -84,8 +85,11 @@ public class ProductionOrderController {
             @ApiResponse(responseCode = "400", description = "Production order cannot be completed"),
             @ApiResponse(responseCode = "404", description = "Production order not found")
     })
-    public ResponseEntity<Map<String, Object>> completeProductionOrder(@PathVariable Long id) {
-        ProductionOrder completedProductionOrder = productionOrderService.completeProductionOrder(id);
+    public ResponseEntity<Map<String, Object>> completeProductionOrder(
+            @PathVariable Long id,
+            @RequestParam Long warehouseId
+    ) {
+        ProductionOrder completedProductionOrder = productionOrderService.completeProductionOrder(id, warehouseId);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Production order completed successfully",

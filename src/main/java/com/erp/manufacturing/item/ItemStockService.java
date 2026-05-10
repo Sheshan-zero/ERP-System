@@ -2,11 +2,10 @@ package com.erp.manufacturing.item;
 
 import com.erp.manufacturing.common.BusinessException;
 import com.erp.manufacturing.common.ResourceNotFoundException;
+import com.erp.manufacturing.inventorybalance.InventoryBalanceService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
@@ -14,32 +13,31 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class ItemStockService {
 
-    private static final int MAX_OPTIMISTIC_LOCK_RETRIES = 3;
-
     private final ItemRepository itemRepository;
-    private final TransactionTemplate transactionTemplate;
+    private final InventoryBalanceService inventoryBalanceService;
 
+    @Transactional
     public Item increaseStock(Long itemId, BigDecimal quantity) {
-        return adjustStockWithRetry(itemId, quantity, false);
+        return adjustStock(itemId, requirePositiveQuantity(quantity), false);
     }
 
+    @Transactional
+    public Item increaseStock(Long itemId, Long warehouseId, BigDecimal quantity) {
+        Item item = adjustStock(itemId, requirePositiveQuantity(quantity), false);
+        inventoryBalanceService.increaseStock(itemId, warehouseId, quantity);
+        return item;
+    }
+
+    @Transactional
     public Item decreaseStock(Long itemId, BigDecimal quantity) {
-        return adjustStockWithRetry(itemId, quantity.negate(), true);
+        return adjustStock(itemId, requirePositiveQuantity(quantity).negate(), true);
     }
 
-    private Item adjustStockWithRetry(Long itemId, BigDecimal delta, boolean requireSufficientStock) {
-        RuntimeException lastException = null;
-
-        for (int attempt = 1; attempt <= MAX_OPTIMISTIC_LOCK_RETRIES; attempt++) {
-            try {
-                transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-                return transactionTemplate.execute(status -> adjustStock(itemId, delta, requireSufficientStock));
-            } catch (OptimisticLockingFailureException exception) {
-                lastException = exception;
-            }
-        }
-
-        throw new BusinessException("Stock update failed due to concurrent changes. Please retry.");
+    @Transactional
+    public Item decreaseStock(Long itemId, Long warehouseId, BigDecimal quantity) {
+        Item item = adjustStock(itemId, requirePositiveQuantity(quantity).negate(), true);
+        inventoryBalanceService.decreaseStock(itemId, warehouseId, quantity);
+        return item;
     }
 
     private Item adjustStock(Long itemId, BigDecimal delta, boolean requireSufficientStock) {
@@ -61,5 +59,12 @@ public class ItemStockService {
 
         item.setCurrentStock(newStock);
         return itemRepository.saveAndFlush(item);
+    }
+
+    private BigDecimal requirePositiveQuantity(BigDecimal quantity) {
+        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("Stock quantity must be greater than 0");
+        }
+        return quantity;
     }
 }

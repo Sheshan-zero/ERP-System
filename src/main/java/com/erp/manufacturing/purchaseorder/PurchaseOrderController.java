@@ -91,9 +91,10 @@ public class PurchaseOrderController {
     })
     public ResponseEntity<Map<String, Object>> receivePurchaseOrder(
             @PathVariable Long id,
-            @RequestParam(required = false) Long employeeId
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam Long warehouseId
     ) {
-        PurchaseOrder receivedPurchaseOrder = purchaseOrderService.receivePurchaseOrder(id, employeeId);
+        PurchaseOrder receivedPurchaseOrder = purchaseOrderService.receivePurchaseOrder(id, employeeId, warehouseId);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Purchase order received successfully",

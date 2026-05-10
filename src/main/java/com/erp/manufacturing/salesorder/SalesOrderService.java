@@ -15,6 +15,7 @@ import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
 import com.erp.manufacturing.item.ItemStockService;
 import com.erp.manufacturing.salesorder.dto.SalesInvoiceDto;
+import com.erp.manufacturing.warehouse.Warehouse;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -118,7 +119,7 @@ public class SalesOrderService {
         );
     }
 
-    public SalesOrder deliverSalesOrder(Long salesOrderId) {
+    public SalesOrder deliverSalesOrder(Long salesOrderId, Long warehouseId) {
         SalesOrder salesOrder = getSalesOrderById(salesOrderId);
 
         if (salesOrder.getOrderStatus() == SalesOrderStatus.Delivered) {
@@ -129,6 +130,7 @@ public class SalesOrderService {
         }
 
         Employee employee = getEmployeeReference(salesOrder.getEmployeeId());
+        Warehouse warehouse = getWarehouseReference(warehouseId);
         LocalDateTime now = LocalDateTime.now();
 
         for (SalesOrderItem salesOrderItem : salesOrder.getSalesOrderItems()) {
@@ -140,9 +142,10 @@ public class SalesOrderService {
                     salesOrderItem.getQuantity(),
                     "Sales order item quantity must be greater than 0"
             );
-            Item updatedFinishedProduct = itemStockService.decreaseStock(finishedProduct.getItemId(), quantity);
+            Item updatedFinishedProduct = itemStockService.decreaseStock(finishedProduct.getItemId(), warehouseId, quantity);
             inventoryTransactionRepository.save(InventoryTransaction.builder()
                     .item(updatedFinishedProduct)
+                    .warehouse(warehouse)
                     .employee(employee)
                     .transactionType(InventoryTransactionType.StockOut.getValue())
                     .quantity(quantity)
@@ -198,6 +201,14 @@ public class SalesOrderService {
         }
 
         return entityManager.getReference(Employee.class, employeeId);
+    }
+
+    private Warehouse getWarehouseReference(Long warehouseId) {
+        if (warehouseId == null) {
+            throw new BusinessException("Warehouse ID is required to deliver sales order stock");
+        }
+
+        return entityManager.getReference(Warehouse.class, warehouseId);
     }
 
     private BigDecimal getCurrentStock(Item item) {

@@ -8,3 +8,6 @@ mvnw.cmd
 .vscode/
 
 *.log
+.env
+.env.*
+!.env.example

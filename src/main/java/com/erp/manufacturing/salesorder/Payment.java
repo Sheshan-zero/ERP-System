@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -54,4 +55,8 @@ public class Payment {
     @Size(max = 30, message = "Payment status must not exceed 30 characters")
     @Column(name = "PAYMENT_STATUS", length = 30)
     private String paymentStatus;
+
+    @Version
+    @Column(name = "VERSION")
+    private Long version;
 }

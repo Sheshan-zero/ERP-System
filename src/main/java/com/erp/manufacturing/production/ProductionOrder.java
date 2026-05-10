@@ -13,6 +13,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
@@ -85,4 +86,8 @@ public class ProductionOrder {
     @JsonManagedReference(value = "production-assignments")
     @OneToMany(mappedBy = "productionOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductionAssignment> assignments = new ArrayList<>();
+
+    @Version
+    @Column(name = "VERSION")
+    private Long version;
 }

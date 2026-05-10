@@ -16,6 +16,7 @@ import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
 import com.erp.manufacturing.item.ItemStockService;
+import com.erp.manufacturing.warehouse.Warehouse;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -103,7 +104,7 @@ public class ProductionOrderService {
         productionOrderRepository.deleteById(id);
     }
 
-    public ProductionOrder completeProductionOrder(Long productionOrderId) {
+    public ProductionOrder completeProductionOrder(Long productionOrderId, Long warehouseId) {
         ProductionOrder productionOrder = getProductionOrderById(productionOrderId);
 
         if (productionOrder.getStatus() == ProductionOrderStatus.Completed) {
@@ -121,15 +122,17 @@ public class ProductionOrderService {
         }
 
         Employee employee = getEmployeeReference(productionOrder.getEmployeeId());
+        Warehouse warehouse = getWarehouseReference(warehouseId);
         LocalDateTime now = LocalDateTime.now();
         explodeBomIfNoMaterialUsage(productionOrder);
 
         for (ProductionMaterialUsage usage : productionOrder.getMaterialUsages()) {
             Item rawMaterial = getItem(usage.getRawMaterialId(), "Raw material not found with id: ");
             BigDecimal quantityUsed = requirePositiveQuantity(usage.getQuantityUsed(), "Quantity used must be greater than 0");
-            Item updatedRawMaterial = itemStockService.decreaseStock(rawMaterial.getItemId(), quantityUsed);
+            Item updatedRawMaterial = itemStockService.decreaseStock(rawMaterial.getItemId(), warehouseId, quantityUsed);
             inventoryTransactionRepository.save(InventoryTransaction.builder()
                     .item(updatedRawMaterial)
+                    .warehouse(warehouse)
                     .employee(employee)
                     .transactionType(InventoryTransactionType.StockOut.getValue())
                     .quantity(quantityUsed)
@@ -144,9 +147,10 @@ public class ProductionOrderService {
         );
         BigDecimal producedQuantity = productionOrder.getQuantityToProduce();
 
-        Item updatedFinishedProduct = itemStockService.increaseStock(finishedProduct.getItemId(), producedQuantity);
+        Item updatedFinishedProduct = itemStockService.increaseStock(finishedProduct.getItemId(), warehouseId, producedQuantity);
         inventoryTransactionRepository.save(InventoryTransaction.builder()
                 .item(updatedFinishedProduct)
+                .warehouse(warehouse)
                 .employee(employee)
                 .transactionType(InventoryTransactionType.StockIn.getValue())
                 .quantity(producedQuantity)
@@ -200,6 +204,14 @@ public class ProductionOrderService {
         }
 
         return entityManager.getReference(Employee.class, employeeId);
+    }
+
+    private Warehouse getWarehouseReference(Long warehouseId) {
+        if (warehouseId == null) {
+            throw new BusinessException("Warehouse ID is required to complete production stock movements");
+        }
+
+        return entityManager.getReference(Warehouse.class, warehouseId);
     }
 
     private BigDecimal getCurrentStock(Item item) {

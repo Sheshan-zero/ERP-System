@@ -15,6 +15,7 @@ import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemRepository;
 import com.erp.manufacturing.item.ItemStockService;
 import com.erp.manufacturing.purchaseorder.dto.PurchaseBillDto;
+import com.erp.manufacturing.warehouse.Warehouse;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -133,7 +134,7 @@ public class PurchaseOrderService {
         return purchaseOrderRepository.save(purchaseOrder);
     }
 
-    public PurchaseOrder receivePurchaseOrder(Long purchaseOrderId, Long employeeId) {
+    public PurchaseOrder receivePurchaseOrder(Long purchaseOrderId, Long employeeId, Long warehouseId) {
         PurchaseOrder purchaseOrder = getPurchaseOrderById(purchaseOrderId);
 
         if (purchaseOrder.getStatus() == PurchaseOrderStatus.Received) {
@@ -146,6 +147,7 @@ public class PurchaseOrderService {
         LocalDateTime now = LocalDateTime.now();
         Long auditEmployeeId = employeeId != null ? employeeId : purchaseOrder.getEmployeeId();
         Employee employee = getEmployeeReference(auditEmployeeId);
+        Warehouse warehouse = getWarehouseReference(warehouseId);
 
         for (PurchaseOrderItem purchaseOrderItem : purchaseOrder.getPurchaseOrderItems()) {
             Item rawMaterial = getItem(
@@ -157,9 +159,10 @@ public class PurchaseOrderService {
                     "Purchase order item quantity must be greater than 0"
             );
 
-            Item updatedRawMaterial = itemStockService.increaseStock(rawMaterial.getItemId(), quantity);
+            Item updatedRawMaterial = itemStockService.increaseStock(rawMaterial.getItemId(), warehouseId, quantity);
             inventoryTransactionRepository.save(InventoryTransaction.builder()
                     .item(updatedRawMaterial)
+                    .warehouse(warehouse)
                     .employee(employee)
                     .transactionType(InventoryTransactionType.StockIn.getValue())
                     .quantity(quantity)
@@ -242,6 +245,14 @@ public class PurchaseOrderService {
         }
 
         return entityManager.getReference(Employee.class, employeeId);
+    }
+
+    private Warehouse getWarehouseReference(Long warehouseId) {
+        if (warehouseId == null) {
+            throw new BusinessException("Warehouse ID is required to receive purchase order stock");
+        }
+
+        return entityManager.getReference(Warehouse.class, warehouseId);
     }
 
     private void applyApprovalStatus(PurchaseOrder purchaseOrder) {

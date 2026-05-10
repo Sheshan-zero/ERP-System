@@ -3,6 +3,7 @@ package com.erp.manufacturing.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -37,11 +38,19 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                        "/v3/api-docs/**"
                         ).permitAll()
                         .requestMatchers("/api/dashboard/**", "/api/audit-logs/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/purchase-orders/*/approve").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/purchase-orders/*/receive").hasAnyRole("ADMIN", "MANAGER", "INVENTORY")
+                        .requestMatchers(HttpMethod.POST, "/api/sales-orders/*/deliver").hasAnyRole("ADMIN", "MANAGER", "INVENTORY")
+                        .requestMatchers(HttpMethod.POST, "/api/production-orders/*/complete").hasAnyRole("ADMIN", "MANAGER", "PRODUCTION")
+                        .requestMatchers(HttpMethod.POST, "/api/inventory-transactions/**").hasAnyRole("ADMIN", "MANAGER", "INVENTORY")
+                        .requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("ADMIN", "MANAGER", "SALES", "PURCHASE", "PRODUCTION", "INVENTORY")
+                        .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
-                        .anyRequest().permitAll()
+                        .anyRequest().denyAll()
                 )
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

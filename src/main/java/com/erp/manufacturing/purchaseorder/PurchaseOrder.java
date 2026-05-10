@@ -14,6 +14,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import jakarta.persistence.Version;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
@@ -68,4 +69,8 @@ public class PurchaseOrder {
     @JsonManagedReference
     @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PurchaseOrderItem> purchaseOrderItems = new ArrayList<>();
+
+    @Version
+    @Column(name = "VERSION")
+    private Long version;
 }

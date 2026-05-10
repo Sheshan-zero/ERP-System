@@ -1,5 +1,6 @@
 package com.erp.manufacturing.auditlog;
 
+import com.erp.manufacturing.auditlog.dto.AuditLogResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,14 +16,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuditLogController {
 
     private final AuditLogService auditLogService;
+    private final AuditLogMapper auditLogMapper;
 
     @GetMapping
-    public ResponseEntity<Page<AuditLog>> getAllAuditLogs(Pageable pageable) {
-        return ResponseEntity.ok(auditLogService.getAllAuditLogs(pageable));
+    public ResponseEntity<Page<AuditLogResponse>> getAllAuditLogs(Pageable pageable) {
+        return ResponseEntity.ok(auditLogMapper.toResponsePage(auditLogService.getAllAuditLogs(pageable)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AuditLog> getAuditLogById(@PathVariable Long id) {
-        return ResponseEntity.ok(auditLogService.getAuditLogById(id));
+    public ResponseEntity<AuditLogResponse> getAuditLogById(@PathVariable Long id) {
+        return ResponseEntity.ok(auditLogMapper.toResponse(auditLogService.getAuditLogById(id)));
     }
 }

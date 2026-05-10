@@ -4,7 +4,8 @@ import com.erp.manufacturing.dashboard.dto.MonthlySalesSummaryDto;
 import com.erp.manufacturing.dashboard.dto.ProductionSummaryDto;
 import com.erp.manufacturing.dashboard.dto.SupplierPurchaseSummaryDto;
 import com.erp.manufacturing.dashboard.dto.TopSellingProductDto;
-import com.erp.manufacturing.item.Item;
+import com.erp.manufacturing.common.DtoMapper;
+import com.erp.manufacturing.item.dto.ItemResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,19 +24,24 @@ import java.util.List;
 public class DashboardController {
 
     private final DashboardService dashboardService;
+    private final DtoMapper dtoMapper;
 
     @GetMapping("/low-stock-items")
     @Operation(summary = "Get low stock items", description = "Returns items where current stock is less than or equal to reorder level.")
     @ApiResponse(responseCode = "200", description = "Low stock items retrieved successfully")
-    public ResponseEntity<List<Item>> getLowStockItems() {
-        return ResponseEntity.ok(dashboardService.getLowStockItems());
+    public ResponseEntity<List<ItemResponse>> getLowStockItems() {
+        return ResponseEntity.ok(dashboardService.getLowStockItems().stream()
+                .map(item -> dtoMapper.map(item, ItemResponse.class))
+                .toList());
     }
 
     @GetMapping("/reorder-alerts")
     @Operation(summary = "Get reorder alerts", description = "Returns items that have reached or fallen below reorder level.")
     @ApiResponse(responseCode = "200", description = "Reorder alerts retrieved successfully")
-    public ResponseEntity<List<Item>> getReorderAlerts() {
-        return ResponseEntity.ok(dashboardService.getLowStockItems());
+    public ResponseEntity<List<ItemResponse>> getReorderAlerts() {
+        return ResponseEntity.ok(dashboardService.getLowStockItems().stream()
+                .map(item -> dtoMapper.map(item, ItemResponse.class))
+                .toList());
     }
 
     @GetMapping("/top-selling-products")

@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.erp.manufacturing.common.DtoMapper;
+import com.erp.manufacturing.supplier.dto.SupplierRequest;
+import com.erp.manufacturing.supplier.dto.SupplierResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,12 +29,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class SupplierController {
 
     private final SupplierService supplierService;
+    private final DtoMapper dtoMapper;
 
     @GetMapping
     @Operation(summary = "Get all suppliers")
     @ApiResponse(responseCode = "200", description = "Suppliers retrieved successfully")
-    public ResponseEntity<Page<Supplier>> getAllSuppliers(Pageable pageable) {
-        return ResponseEntity.ok(supplierService.getAllSuppliers(pageable));
+    public ResponseEntity<Page<SupplierResponse>> getAllSuppliers(Pageable pageable) {
+        return ResponseEntity.ok(dtoMapper.mapPage(supplierService.getAllSuppliers(pageable), SupplierResponse.class));
     }
 
     @GetMapping("/{id}")
@@ -40,8 +44,8 @@ public class SupplierController {
             @ApiResponse(responseCode = "200", description = "Supplier retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Supplier not found")
     })
-    public ResponseEntity<Supplier> getSupplierById(@PathVariable Long id) {
-        return ResponseEntity.ok(supplierService.getSupplierById(id));
+    public ResponseEntity<SupplierResponse> getSupplierById(@PathVariable Long id) {
+        return ResponseEntity.ok(dtoMapper.map(supplierService.getSupplierById(id), SupplierResponse.class));
     }
 
     @PostMapping
@@ -50,8 +54,9 @@ public class SupplierController {
             @ApiResponse(responseCode = "201", description = "Supplier created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid supplier request")
     })
-    public ResponseEntity<Supplier> createSupplier(@Valid @RequestBody Supplier supplier) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(supplierService.createSupplier(supplier));
+    public ResponseEntity<SupplierResponse> createSupplier(@Valid @RequestBody SupplierRequest request) {
+        Supplier supplier = dtoMapper.map(request, Supplier.class);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dtoMapper.map(supplierService.createSupplier(supplier), SupplierResponse.class));
     }
 
     @PutMapping("/{id}")
@@ -60,8 +65,9 @@ public class SupplierController {
             @ApiResponse(responseCode = "200", description = "Supplier updated successfully"),
             @ApiResponse(responseCode = "404", description = "Supplier not found")
     })
-    public ResponseEntity<Supplier> updateSupplier(@PathVariable Long id, @Valid @RequestBody Supplier supplier) {
-        return ResponseEntity.ok(supplierService.updateSupplier(id, supplier));
+    public ResponseEntity<SupplierResponse> updateSupplier(@PathVariable Long id, @Valid @RequestBody SupplierRequest request) {
+        Supplier supplier = dtoMapper.map(request, Supplier.class);
+        return ResponseEntity.ok(dtoMapper.map(supplierService.updateSupplier(id, supplier), SupplierResponse.class));
     }
 
     @DeleteMapping("/{id}")

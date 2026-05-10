@@ -1,5 +1,8 @@
 package com.erp.manufacturing.warehouse;
 
+import com.erp.manufacturing.common.DtoMapper;
+import com.erp.manufacturing.warehouse.dto.WarehouseRequest;
+import com.erp.manufacturing.warehouse.dto.WarehouseResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,25 +24,28 @@ import org.springframework.web.bind.annotation.RestController;
 public class WarehouseController {
 
     private final WarehouseService warehouseService;
+    private final DtoMapper dtoMapper;
 
     @GetMapping
-    public ResponseEntity<Page<Warehouse>> getAllWarehouses(Pageable pageable) {
-        return ResponseEntity.ok(warehouseService.getAllWarehouses(pageable));
+    public ResponseEntity<Page<WarehouseResponse>> getAllWarehouses(Pageable pageable) {
+        return ResponseEntity.ok(dtoMapper.mapPage(warehouseService.getAllWarehouses(pageable), WarehouseResponse.class));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Warehouse> getWarehouseById(@PathVariable Long id) {
-        return ResponseEntity.ok(warehouseService.getWarehouseById(id));
+    public ResponseEntity<WarehouseResponse> getWarehouseById(@PathVariable Long id) {
+        return ResponseEntity.ok(dtoMapper.map(warehouseService.getWarehouseById(id), WarehouseResponse.class));
     }
 
     @PostMapping
-    public ResponseEntity<Warehouse> createWarehouse(@Valid @RequestBody Warehouse warehouse) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(warehouseService.createWarehouse(warehouse));
+    public ResponseEntity<WarehouseResponse> createWarehouse(@Valid @RequestBody WarehouseRequest request) {
+        Warehouse warehouse = dtoMapper.map(request, Warehouse.class);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dtoMapper.map(warehouseService.createWarehouse(warehouse), WarehouseResponse.class));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Warehouse> updateWarehouse(@PathVariable Long id, @Valid @RequestBody Warehouse warehouse) {
-        return ResponseEntity.ok(warehouseService.updateWarehouse(id, warehouse));
+    public ResponseEntity<WarehouseResponse> updateWarehouse(@PathVariable Long id, @Valid @RequestBody WarehouseRequest request) {
+        Warehouse warehouse = dtoMapper.map(request, Warehouse.class);
+        return ResponseEntity.ok(dtoMapper.map(warehouseService.updateWarehouse(id, warehouse), WarehouseResponse.class));
     }
 
     @DeleteMapping("/{id}")

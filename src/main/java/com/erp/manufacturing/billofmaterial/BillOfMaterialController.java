@@ -1,5 +1,7 @@
 package com.erp.manufacturing.billofmaterial;
 
+import com.erp.manufacturing.billofmaterial.dto.BillOfMaterialRequest;
+import com.erp.manufacturing.billofmaterial.dto.BillOfMaterialResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,36 +25,41 @@ import java.util.List;
 public class BillOfMaterialController {
 
     private final BillOfMaterialService billOfMaterialService;
+    private final BillOfMaterialMapper billOfMaterialMapper;
 
     @GetMapping
-    public ResponseEntity<Page<BillOfMaterial>> getAllBillOfMaterials(Pageable pageable) {
-        return ResponseEntity.ok(billOfMaterialService.getAllBillOfMaterials(pageable));
+    public ResponseEntity<Page<BillOfMaterialResponse>> getAllBillOfMaterials(Pageable pageable) {
+        return ResponseEntity.ok(billOfMaterialMapper.toResponsePage(billOfMaterialService.getAllBillOfMaterials(pageable)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BillOfMaterial> getBillOfMaterialById(@PathVariable Long id) {
-        return ResponseEntity.ok(billOfMaterialService.getBillOfMaterialById(id));
+    public ResponseEntity<BillOfMaterialResponse> getBillOfMaterialById(@PathVariable Long id) {
+        return ResponseEntity.ok(billOfMaterialMapper.toResponse(billOfMaterialService.getBillOfMaterialById(id)));
     }
 
     @GetMapping("/product/{finishedProductId}")
-    public ResponseEntity<List<BillOfMaterial>> getBillOfMaterialsByFinishedProductId(
+    public ResponseEntity<List<BillOfMaterialResponse>> getBillOfMaterialsByFinishedProductId(
             @PathVariable Long finishedProductId
     ) {
-        return ResponseEntity.ok(billOfMaterialService.getBillOfMaterialsByFinishedProductId(finishedProductId));
+        return ResponseEntity.ok(billOfMaterialMapper.toResponseList(
+                billOfMaterialService.getBillOfMaterialsByFinishedProductId(finishedProductId)
+        ));
     }
 
     @PostMapping
-    public ResponseEntity<BillOfMaterial> createBillOfMaterial(@Valid @RequestBody BillOfMaterial billOfMaterial) {
+    public ResponseEntity<BillOfMaterialResponse> createBillOfMaterial(@Valid @RequestBody BillOfMaterialRequest request) {
+        BillOfMaterial billOfMaterial = billOfMaterialMapper.toEntity(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(billOfMaterialService.createBillOfMaterial(billOfMaterial));
+                .body(billOfMaterialMapper.toResponse(billOfMaterialService.createBillOfMaterial(billOfMaterial)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BillOfMaterial> updateBillOfMaterial(
+    public ResponseEntity<BillOfMaterialResponse> updateBillOfMaterial(
             @PathVariable Long id,
-            @Valid @RequestBody BillOfMaterial billOfMaterial
+            @Valid @RequestBody BillOfMaterialRequest request
     ) {
-        return ResponseEntity.ok(billOfMaterialService.updateBillOfMaterial(id, billOfMaterial));
+        BillOfMaterial billOfMaterial = billOfMaterialMapper.toEntity(request);
+        return ResponseEntity.ok(billOfMaterialMapper.toResponse(billOfMaterialService.updateBillOfMaterial(id, billOfMaterial)));
     }
 
     @DeleteMapping("/{id}")

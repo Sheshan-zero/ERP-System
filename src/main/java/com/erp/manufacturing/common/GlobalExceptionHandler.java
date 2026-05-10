@@ -2,6 +2,7 @@ package com.erp.manufacturing.common;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -41,6 +42,30 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining("; "));
 
         return buildResponse(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleConstraintViolation(
+            jakarta.validation.ConstraintViolationException exception,
+            HttpServletRequest request
+    ) {
+        String message = exception.getConstraintViolations().stream()
+                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .collect(Collectors.joining("; "));
+
+        return buildResponse(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrityViolation(
+            DataIntegrityViolationException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                "Database constraint violation: " + getDatabaseErrorMessage(exception),
+                request
+        );
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
@@ -85,5 +110,19 @@ public class GlobalExceptionHandler {
 
     private String formatFieldError(FieldError fieldError) {
         return fieldError.getField() + ": " + fieldError.getDefaultMessage();
+    }
+
+    private String getDatabaseErrorMessage(DataIntegrityViolationException exception) {
+        Throwable mostSpecificCause = exception.getMostSpecificCause();
+        if (mostSpecificCause == null || mostSpecificCause.getMessage() == null) {
+            return "request violates a database rule";
+        }
+
+        String message = mostSpecificCause.getMessage();
+        int newlineIndex = message.indexOf(System.lineSeparator());
+        if (newlineIndex > 0) {
+            return message.substring(0, newlineIndex);
+        }
+        return message;
     }
 }

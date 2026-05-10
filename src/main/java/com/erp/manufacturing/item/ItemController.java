@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.erp.manufacturing.common.DtoMapper;
+import com.erp.manufacturing.item.dto.ItemRequest;
+import com.erp.manufacturing.item.dto.ItemResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,12 +29,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class ItemController {
 
     private final ItemService itemService;
+    private final DtoMapper dtoMapper;
 
     @GetMapping
     @Operation(summary = "Get all items", description = "Returns all inventory items.")
     @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
-    public ResponseEntity<Page<Item>> getAllItems(Pageable pageable) {
-        return ResponseEntity.ok(itemService.getAllItems(pageable));
+    public ResponseEntity<Page<ItemResponse>> getAllItems(Pageable pageable) {
+        return ResponseEntity.ok(dtoMapper.mapPage(itemService.getAllItems(pageable), ItemResponse.class));
     }
 
     @GetMapping("/{id}")
@@ -40,8 +44,8 @@ public class ItemController {
             @ApiResponse(responseCode = "200", description = "Item retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Item not found")
     })
-    public ResponseEntity<Item> getItemById(@PathVariable Long id) {
-        return ResponseEntity.ok(itemService.getItemById(id));
+    public ResponseEntity<ItemResponse> getItemById(@PathVariable Long id) {
+        return ResponseEntity.ok(dtoMapper.map(itemService.getItemById(id), ItemResponse.class));
     }
 
     @PostMapping
@@ -50,8 +54,9 @@ public class ItemController {
             @ApiResponse(responseCode = "201", description = "Item created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid item request")
     })
-    public ResponseEntity<Item> createItem(@Valid @RequestBody Item item) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(itemService.createItem(item));
+    public ResponseEntity<ItemResponse> createItem(@Valid @RequestBody ItemRequest request) {
+        Item item = dtoMapper.map(request, Item.class);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dtoMapper.map(itemService.createItem(item), ItemResponse.class));
     }
 
     @PutMapping("/{id}")
@@ -60,8 +65,9 @@ public class ItemController {
             @ApiResponse(responseCode = "200", description = "Item updated successfully"),
             @ApiResponse(responseCode = "404", description = "Item not found")
     })
-    public ResponseEntity<Item> updateItem(@PathVariable Long id, @Valid @RequestBody Item item) {
-        return ResponseEntity.ok(itemService.updateItem(id, item));
+    public ResponseEntity<ItemResponse> updateItem(@PathVariable Long id, @Valid @RequestBody ItemRequest request) {
+        Item item = dtoMapper.map(request, Item.class);
+        return ResponseEntity.ok(dtoMapper.map(itemService.updateItem(id, item), ItemResponse.class));
     }
 
     @DeleteMapping("/{id}")

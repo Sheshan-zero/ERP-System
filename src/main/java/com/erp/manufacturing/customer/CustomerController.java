@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.erp.manufacturing.common.DtoMapper;
+import com.erp.manufacturing.customer.dto.CustomerRequest;
+import com.erp.manufacturing.customer.dto.CustomerResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,12 +29,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final DtoMapper dtoMapper;
 
     @GetMapping
     @Operation(summary = "Get all customers")
     @ApiResponse(responseCode = "200", description = "Customers retrieved successfully")
-    public ResponseEntity<Page<Customer>> getAllCustomers(Pageable pageable) {
-        return ResponseEntity.ok(customerService.getAllCustomers(pageable));
+    public ResponseEntity<Page<CustomerResponse>> getAllCustomers(Pageable pageable) {
+        return ResponseEntity.ok(dtoMapper.mapPage(customerService.getAllCustomers(pageable), CustomerResponse.class));
     }
 
     @GetMapping("/{id}")
@@ -40,8 +44,8 @@ public class CustomerController {
             @ApiResponse(responseCode = "200", description = "Customer retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Customer not found")
     })
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) {
-        return ResponseEntity.ok(customerService.getCustomerById(id));
+    public ResponseEntity<CustomerResponse> getCustomerById(@PathVariable Long id) {
+        return ResponseEntity.ok(dtoMapper.map(customerService.getCustomerById(id), CustomerResponse.class));
     }
 
     @PostMapping
@@ -50,8 +54,9 @@ public class CustomerController {
             @ApiResponse(responseCode = "201", description = "Customer created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid customer request")
     })
-    public ResponseEntity<Customer> createCustomer(@Valid @RequestBody Customer customer) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(customerService.createCustomer(customer));
+    public ResponseEntity<CustomerResponse> createCustomer(@Valid @RequestBody CustomerRequest request) {
+        Customer customer = dtoMapper.map(request, Customer.class);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dtoMapper.map(customerService.createCustomer(customer), CustomerResponse.class));
     }
 
     @PutMapping("/{id}")
@@ -60,8 +65,9 @@ public class CustomerController {
             @ApiResponse(responseCode = "200", description = "Customer updated successfully"),
             @ApiResponse(responseCode = "404", description = "Customer not found")
     })
-    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @Valid @RequestBody Customer customer) {
-        return ResponseEntity.ok(customerService.updateCustomer(id, customer));
+    public ResponseEntity<CustomerResponse> updateCustomer(@PathVariable Long id, @Valid @RequestBody CustomerRequest request) {
+        Customer customer = dtoMapper.map(request, Customer.class);
+        return ResponseEntity.ok(dtoMapper.map(customerService.updateCustomer(id, customer), CustomerResponse.class));
     }
 
     @DeleteMapping("/{id}")

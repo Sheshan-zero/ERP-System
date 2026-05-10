@@ -1,5 +1,8 @@
 package com.erp.manufacturing.employee;
 
+import com.erp.manufacturing.common.DtoMapper;
+import com.erp.manufacturing.employee.dto.EmployeeRequest;
+import com.erp.manufacturing.employee.dto.EmployeeResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,25 +24,28 @@ import org.springframework.web.bind.annotation.RestController;
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final DtoMapper dtoMapper;
 
     @GetMapping
-    public ResponseEntity<Page<Employee>> getAllEmployees(Pageable pageable) {
-        return ResponseEntity.ok(employeeService.getAllEmployees(pageable));
+    public ResponseEntity<Page<EmployeeResponse>> getAllEmployees(Pageable pageable) {
+        return ResponseEntity.ok(dtoMapper.mapPage(employeeService.getAllEmployees(pageable), EmployeeResponse.class));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Employee> getEmployeeById(@PathVariable Long id) {
-        return ResponseEntity.ok(employeeService.getEmployeeById(id));
+    public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long id) {
+        return ResponseEntity.ok(dtoMapper.map(employeeService.getEmployeeById(id), EmployeeResponse.class));
     }
 
     @PostMapping
-    public ResponseEntity<Employee> createEmployee(@Valid @RequestBody Employee employee) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.createEmployee(employee));
+    public ResponseEntity<EmployeeResponse> createEmployee(@Valid @RequestBody EmployeeRequest request) {
+        Employee employee = dtoMapper.map(request, Employee.class);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dtoMapper.map(employeeService.createEmployee(employee), EmployeeResponse.class));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @Valid @RequestBody Employee employee) {
-        return ResponseEntity.ok(employeeService.updateEmployee(id, employee));
+    public ResponseEntity<EmployeeResponse> updateEmployee(@PathVariable Long id, @Valid @RequestBody EmployeeRequest request) {
+        Employee employee = dtoMapper.map(request, Employee.class);
+        return ResponseEntity.ok(dtoMapper.map(employeeService.updateEmployee(id, employee), EmployeeResponse.class));
     }
 
     @DeleteMapping("/{id}")

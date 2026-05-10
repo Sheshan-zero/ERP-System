@@ -1,6 +1,8 @@
 package com.erp.manufacturing.inventorytransaction;
 
 import com.erp.manufacturing.inventorytransaction.dto.WarehouseStockDto;
+import com.erp.manufacturing.inventorytransaction.dto.InventoryTransactionRequest;
+import com.erp.manufacturing.inventorytransaction.dto.InventoryTransactionResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,15 +22,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class InventoryTransactionController {
 
     private final InventoryTransactionService inventoryTransactionService;
+    private final InventoryTransactionMapper inventoryTransactionMapper;
 
     @GetMapping
-    public ResponseEntity<Page<InventoryTransaction>> getAllInventoryTransactions(Pageable pageable) {
-        return ResponseEntity.ok(inventoryTransactionService.getAllInventoryTransactions(pageable));
+    public ResponseEntity<Page<InventoryTransactionResponse>> getAllInventoryTransactions(Pageable pageable) {
+        return ResponseEntity.ok(inventoryTransactionMapper.toResponsePage(
+                inventoryTransactionService.getAllInventoryTransactions(pageable)
+        ));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<InventoryTransaction> getInventoryTransactionById(@PathVariable Long id) {
-        return ResponseEntity.ok(inventoryTransactionService.getInventoryTransactionById(id));
+    public ResponseEntity<InventoryTransactionResponse> getInventoryTransactionById(@PathVariable Long id) {
+        return ResponseEntity.ok(inventoryTransactionMapper.toResponse(
+                inventoryTransactionService.getInventoryTransactionById(id)
+        ));
     }
 
     @GetMapping("/stock-by-warehouse")
@@ -37,11 +44,14 @@ public class InventoryTransactionController {
     }
 
     @PostMapping
-    public ResponseEntity<InventoryTransaction> createInventoryTransaction(
-            @Valid @RequestBody InventoryTransaction inventoryTransaction
+    public ResponseEntity<InventoryTransactionResponse> createInventoryTransaction(
+            @Valid @RequestBody InventoryTransactionRequest request
     ) {
+        InventoryTransaction inventoryTransaction = inventoryTransactionMapper.toEntity(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(inventoryTransactionService.createInventoryTransaction(inventoryTransaction));
+                .body(inventoryTransactionMapper.toResponse(
+                        inventoryTransactionService.createInventoryTransaction(inventoryTransaction)
+                ));
     }
 
 }

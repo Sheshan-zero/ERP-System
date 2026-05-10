@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import com.erp.manufacturing.salesorder.dto.SalesInvoiceDto;
+import com.erp.manufacturing.salesorder.dto.SalesOrderRequest;
+import com.erp.manufacturing.salesorder.dto.SalesOrderResponse;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,12 +31,13 @@ import java.util.Map;
 public class SalesOrderController {
 
     private final SalesOrderService salesOrderService;
+    private final SalesOrderMapper salesOrderMapper;
 
     @GetMapping
     @Operation(summary = "Get all sales orders")
     @ApiResponse(responseCode = "200", description = "Sales orders retrieved successfully")
-    public ResponseEntity<Page<SalesOrder>> getAllSalesOrders(Pageable pageable) {
-        return ResponseEntity.ok(salesOrderService.getAllSalesOrders(pageable));
+    public ResponseEntity<Page<SalesOrderResponse>> getAllSalesOrders(Pageable pageable) {
+        return ResponseEntity.ok(salesOrderMapper.toResponsePage(salesOrderService.getAllSalesOrders(pageable)));
     }
 
     @GetMapping("/{id}")
@@ -43,8 +46,8 @@ public class SalesOrderController {
             @ApiResponse(responseCode = "200", description = "Sales order retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Sales order not found")
     })
-    public ResponseEntity<SalesOrder> getSalesOrderById(@PathVariable Long id) {
-        return ResponseEntity.ok(salesOrderService.getSalesOrderById(id));
+    public ResponseEntity<SalesOrderResponse> getSalesOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(salesOrderMapper.toResponse(salesOrderService.getSalesOrderById(id)));
     }
 
     @GetMapping("/{id}/invoice")
@@ -58,8 +61,10 @@ public class SalesOrderController {
             @ApiResponse(responseCode = "201", description = "Sales order created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid sales order request")
     })
-    public ResponseEntity<SalesOrder> createSalesOrder(@Valid @RequestBody SalesOrder salesOrder) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(salesOrderService.createSalesOrder(salesOrder));
+    public ResponseEntity<SalesOrderResponse> createSalesOrder(@Valid @RequestBody SalesOrderRequest request) {
+        SalesOrder salesOrder = salesOrderMapper.toEntity(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(salesOrderMapper.toResponse(salesOrderService.createSalesOrder(salesOrder)));
     }
 
     @PutMapping("/{id}")
@@ -68,11 +73,12 @@ public class SalesOrderController {
             @ApiResponse(responseCode = "200", description = "Sales order updated successfully"),
             @ApiResponse(responseCode = "404", description = "Sales order not found")
     })
-    public ResponseEntity<SalesOrder> updateSalesOrder(
+    public ResponseEntity<SalesOrderResponse> updateSalesOrder(
             @PathVariable Long id,
-            @Valid @RequestBody SalesOrder salesOrder
+            @Valid @RequestBody SalesOrderRequest request
     ) {
-        return ResponseEntity.ok(salesOrderService.updateSalesOrder(id, salesOrder));
+        SalesOrder salesOrder = salesOrderMapper.toEntity(request);
+        return ResponseEntity.ok(salesOrderMapper.toResponse(salesOrderService.updateSalesOrder(id, salesOrder)));
     }
 
     @PostMapping("/{id}/deliver")
@@ -87,7 +93,7 @@ public class SalesOrderController {
 
         return ResponseEntity.ok(Map.of(
                 "message", "Sales order delivered successfully",
-                "salesOrder", deliveredSalesOrder
+                "salesOrder", salesOrderMapper.toResponse(deliveredSalesOrder)
         ));
     }
 

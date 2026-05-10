@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.erp.manufacturing.production.dto.ProductionOrderRequest;
+import com.erp.manufacturing.production.dto.ProductionOrderResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,12 +30,13 @@ import java.util.Map;
 public class ProductionOrderController {
 
     private final ProductionOrderService productionOrderService;
+    private final ProductionOrderMapper productionOrderMapper;
 
     @GetMapping
     @Operation(summary = "Get all production orders")
     @ApiResponse(responseCode = "200", description = "Production orders retrieved successfully")
-    public ResponseEntity<Page<ProductionOrder>> getAllProductionOrders(Pageable pageable) {
-        return ResponseEntity.ok(productionOrderService.getAllProductionOrders(pageable));
+    public ResponseEntity<Page<ProductionOrderResponse>> getAllProductionOrders(Pageable pageable) {
+        return ResponseEntity.ok(productionOrderMapper.toResponsePage(productionOrderService.getAllProductionOrders(pageable)));
     }
 
     @GetMapping("/{id}")
@@ -42,8 +45,8 @@ public class ProductionOrderController {
             @ApiResponse(responseCode = "200", description = "Production order retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Production order not found")
     })
-    public ResponseEntity<ProductionOrder> getProductionOrderById(@PathVariable Long id) {
-        return ResponseEntity.ok(productionOrderService.getProductionOrderById(id));
+    public ResponseEntity<ProductionOrderResponse> getProductionOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(productionOrderMapper.toResponse(productionOrderService.getProductionOrderById(id)));
     }
 
     @PostMapping
@@ -52,11 +55,12 @@ public class ProductionOrderController {
             @ApiResponse(responseCode = "201", description = "Production order created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid production order request")
     })
-    public ResponseEntity<ProductionOrder> createProductionOrder(
-            @Valid @RequestBody ProductionOrder productionOrder
+    public ResponseEntity<ProductionOrderResponse> createProductionOrder(
+            @Valid @RequestBody ProductionOrderRequest request
     ) {
+        ProductionOrder productionOrder = productionOrderMapper.toEntity(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(productionOrderService.createProductionOrder(productionOrder));
+                .body(productionOrderMapper.toResponse(productionOrderService.createProductionOrder(productionOrder)));
     }
 
     @PutMapping("/{id}")
@@ -65,11 +69,12 @@ public class ProductionOrderController {
             @ApiResponse(responseCode = "200", description = "Production order updated successfully"),
             @ApiResponse(responseCode = "404", description = "Production order not found")
     })
-    public ResponseEntity<ProductionOrder> updateProductionOrder(
+    public ResponseEntity<ProductionOrderResponse> updateProductionOrder(
             @PathVariable Long id,
-            @Valid @RequestBody ProductionOrder productionOrder
+            @Valid @RequestBody ProductionOrderRequest request
     ) {
-        return ResponseEntity.ok(productionOrderService.updateProductionOrder(id, productionOrder));
+        ProductionOrder productionOrder = productionOrderMapper.toEntity(request);
+        return ResponseEntity.ok(productionOrderMapper.toResponse(productionOrderService.updateProductionOrder(id, productionOrder)));
     }
 
     @PostMapping("/{id}/complete")
@@ -84,7 +89,7 @@ public class ProductionOrderController {
 
         return ResponseEntity.ok(Map.of(
                 "message", "Production order completed successfully",
-                "productionOrder", completedProductionOrder
+                "productionOrder", productionOrderMapper.toResponse(completedProductionOrder)
         ));
     }
 

@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.erp.manufacturing.purchaseorder.dto.PurchaseBillDto;
+import com.erp.manufacturing.purchaseorder.dto.PurchaseOrderRequest;
+import com.erp.manufacturing.purchaseorder.dto.PurchaseOrderResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -30,12 +32,13 @@ import java.util.Map;
 public class PurchaseOrderController {
 
     private final PurchaseOrderService purchaseOrderService;
+    private final PurchaseOrderMapper purchaseOrderMapper;
 
     @GetMapping
     @Operation(summary = "Get all purchase orders")
     @ApiResponse(responseCode = "200", description = "Purchase orders retrieved successfully")
-    public ResponseEntity<Page<PurchaseOrder>> getAllPurchaseOrders(Pageable pageable) {
-        return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders(pageable));
+    public ResponseEntity<Page<PurchaseOrderResponse>> getAllPurchaseOrders(Pageable pageable) {
+        return ResponseEntity.ok(purchaseOrderMapper.toResponsePage(purchaseOrderService.getAllPurchaseOrders(pageable)));
     }
 
     @GetMapping("/{id}")
@@ -44,8 +47,8 @@ public class PurchaseOrderController {
             @ApiResponse(responseCode = "200", description = "Purchase order retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Purchase order not found")
     })
-    public ResponseEntity<PurchaseOrder> getPurchaseOrderById(@PathVariable Long id) {
-        return ResponseEntity.ok(purchaseOrderService.getPurchaseOrderById(id));
+    public ResponseEntity<PurchaseOrderResponse> getPurchaseOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(purchaseOrderMapper.toResponse(purchaseOrderService.getPurchaseOrderById(id)));
     }
 
     @GetMapping("/{id}/bill")
@@ -59,8 +62,10 @@ public class PurchaseOrderController {
             @ApiResponse(responseCode = "201", description = "Purchase order created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid purchase order request")
     })
-    public ResponseEntity<PurchaseOrder> createPurchaseOrder(@Valid @RequestBody PurchaseOrder purchaseOrder) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(purchaseOrderService.createPurchaseOrder(purchaseOrder));
+    public ResponseEntity<PurchaseOrderResponse> createPurchaseOrder(@Valid @RequestBody PurchaseOrderRequest request) {
+        PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(purchaseOrderMapper.toResponse(purchaseOrderService.createPurchaseOrder(purchaseOrder)));
     }
 
     @PutMapping("/{id}")
@@ -69,11 +74,12 @@ public class PurchaseOrderController {
             @ApiResponse(responseCode = "200", description = "Purchase order updated successfully"),
             @ApiResponse(responseCode = "404", description = "Purchase order not found")
     })
-    public ResponseEntity<PurchaseOrder> updatePurchaseOrder(
+    public ResponseEntity<PurchaseOrderResponse> updatePurchaseOrder(
             @PathVariable Long id,
-            @Valid @RequestBody PurchaseOrder purchaseOrder
+            @Valid @RequestBody PurchaseOrderRequest request
     ) {
-        return ResponseEntity.ok(purchaseOrderService.updatePurchaseOrder(id, purchaseOrder));
+        PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(request);
+        return ResponseEntity.ok(purchaseOrderMapper.toResponse(purchaseOrderService.updatePurchaseOrder(id, purchaseOrder)));
     }
 
     @PostMapping("/{id}/receive")
@@ -91,7 +97,7 @@ public class PurchaseOrderController {
 
         return ResponseEntity.ok(Map.of(
                 "message", "Purchase order received successfully",
-                "purchaseOrder", receivedPurchaseOrder
+                "purchaseOrder", purchaseOrderMapper.toResponse(receivedPurchaseOrder)
         ));
     }
 
@@ -104,7 +110,7 @@ public class PurchaseOrderController {
 
         return ResponseEntity.ok(Map.of(
                 "message", "Purchase order approved successfully",
-                "purchaseOrder", approvedPurchaseOrder
+                "purchaseOrder", purchaseOrderMapper.toResponse(approvedPurchaseOrder)
         ));
     }
 

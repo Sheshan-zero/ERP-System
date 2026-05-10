@@ -58,7 +58,7 @@ public class ItemStockService {
         }
 
         item.setCurrentStock(newStock);
-        return itemRepository.saveAndFlush(item);
+        return itemRepository.save(item);
     }
 
     private BigDecimal requirePositiveQuantity(BigDecimal quantity) {

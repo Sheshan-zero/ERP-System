@@ -41,7 +41,7 @@ class ItemStockServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("Insufficient stock");
 
-        verify(itemRepository, never()).saveAndFlush(item);
+        verify(itemRepository, never()).save(item);
         verify(inventoryBalanceService, never()).decreaseStock(10L, 1L, new BigDecimal("6.00"));
     }
 
@@ -52,7 +52,7 @@ class ItemStockServiceTest {
                 .currentStock(new BigDecimal("5.00"))
                 .build();
         when(itemRepository.findById(10L)).thenReturn(Optional.of(item));
-        when(itemRepository.saveAndFlush(item)).thenReturn(item);
+        when(itemRepository.save(item)).thenReturn(item);
 
         Item updatedItem = itemStockService.increaseStock(10L, 1L, new BigDecimal("4.00"));
 

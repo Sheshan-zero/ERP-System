@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record ProductionMaterialUsageRequest(
+        Long usageId,
         @NotNull Long rawMaterialId,
         @NotNull @Positive BigDecimal quantityUsed,
         LocalDateTime usageDate

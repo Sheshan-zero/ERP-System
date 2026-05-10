@@ -25,6 +25,7 @@ public class PurchaseOrderMapper {
         if (request.purchaseOrderItems() != null) {
             request.purchaseOrderItems().forEach(itemRequest -> purchaseOrder.getPurchaseOrderItems().add(
                     PurchaseOrderItem.builder()
+                            .purchaseOrderItemId(itemRequest.purchaseOrderItemId())
                             .purchaseOrder(purchaseOrder)
                             .rawMaterialId(itemRequest.rawMaterialId())
                             .quantity(itemRequest.quantity())

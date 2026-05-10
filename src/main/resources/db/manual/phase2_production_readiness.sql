@@ -26,6 +26,19 @@ CREATE TABLE inventorybalance (
 CREATE INDEX ix_inventory_balance_item ON inventorybalance(item_id);
 CREATE INDEX ix_inventory_balance_warehouse ON inventorybalance(warehouse_id);
 
+CREATE TABLE systemconfiguration (
+    config_key VARCHAR2(100) PRIMARY KEY,
+    config_value VARCHAR2(255) NOT NULL,
+    description VARCHAR2(255)
+);
+
+INSERT INTO systemconfiguration (config_key, config_value, description)
+VALUES (
+    'purchase.approval.threshold',
+    '100000',
+    'Purchase orders above this total require manager approval'
+);
+
 -- Optional one-time seed if existing item.current_stock should start in a default warehouse.
 -- Replace :default_warehouse_id before running, or skip this if balances should start empty.
 --

@@ -5,6 +5,7 @@ import com.erp.manufacturing.auditlog.AuditLogRepository;
 import com.erp.manufacturing.billofmaterial.BillOfMaterial;
 import com.erp.manufacturing.billofmaterial.BillOfMaterialRepository;
 import com.erp.manufacturing.common.BusinessException;
+import com.erp.manufacturing.common.EntityLookupService;
 import com.erp.manufacturing.common.constants.DatabaseTableNames;
 import com.erp.manufacturing.common.enums.AuditActionType;
 import com.erp.manufacturing.common.enums.InventoryTransactionType;
@@ -14,10 +15,8 @@ import com.erp.manufacturing.employee.Employee;
 import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
 import com.erp.manufacturing.item.Item;
-import com.erp.manufacturing.item.ItemRepository;
 import com.erp.manufacturing.item.ItemStockService;
 import com.erp.manufacturing.warehouse.Warehouse;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +27,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,12 +38,11 @@ import java.util.List;
 public class ProductionOrderService {
 
     private final ProductionOrderRepository productionOrderRepository;
-    private final ItemRepository itemRepository;
     private final ItemStockService itemStockService;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final AuditLogRepository auditLogRepository;
     private final BillOfMaterialRepository billOfMaterialRepository;
-    private final EntityManager entityManager;
+    private final EntityLookupService entityLookupService;
 
     @Transactional(readOnly = true)
     public Page<ProductionOrder> getAllProductionOrders(Pageable pageable) {
@@ -66,6 +68,7 @@ public class ProductionOrderService {
 
     public ProductionOrder updateProductionOrder(Long id, ProductionOrder productionOrder) {
         ProductionOrder existingProductionOrder = getProductionOrderById(id);
+        validateModifiable(existingProductionOrder);
 
         existingProductionOrder.setFinishedProductId(productionOrder.getFinishedProductId());
         existingProductionOrder.setEmployeeId(productionOrder.getEmployeeId());
@@ -77,31 +80,16 @@ public class ProductionOrderService {
         existingProductionOrder.setEndDate(productionOrder.getEndDate());
         existingProductionOrder.setPriority(productionOrder.getPriority());
 
-        existingProductionOrder.getMaterialUsages().clear();
-        if (productionOrder.getMaterialUsages() != null) {
-            for (ProductionMaterialUsage usage : productionOrder.getMaterialUsages()) {
-                usage.setProductionOrder(existingProductionOrder);
-                existingProductionOrder.getMaterialUsages().add(usage);
-            }
-        }
-
-        existingProductionOrder.getAssignments().clear();
-        if (productionOrder.getAssignments() != null) {
-            for (ProductionAssignment assignment : productionOrder.getAssignments()) {
-                assignment.setProductionOrder(existingProductionOrder);
-                existingProductionOrder.getAssignments().add(assignment);
-            }
-        }
+        mergeMaterialUsages(existingProductionOrder, productionOrder.getMaterialUsages());
+        mergeAssignments(existingProductionOrder, productionOrder.getAssignments());
 
         return productionOrderRepository.save(existingProductionOrder);
     }
 
     public void deleteProductionOrder(Long id) {
-        if (!productionOrderRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Production order not found with id: " + id);
-        }
-
-        productionOrderRepository.deleteById(id);
+        ProductionOrder productionOrder = getProductionOrderById(id);
+        validateModifiable(productionOrder);
+        productionOrderRepository.delete(productionOrder);
     }
 
     public ProductionOrder completeProductionOrder(Long productionOrderId, Long warehouseId) {
@@ -121,14 +109,20 @@ public class ProductionOrderService {
             throw new BusinessException("Finished product is required");
         }
 
-        Employee employee = getEmployeeReference(productionOrder.getEmployeeId());
-        Warehouse warehouse = getWarehouseReference(warehouseId);
+        Employee employee = entityLookupService.getEmployeeReference(productionOrder.getEmployeeId());
+        Warehouse warehouse = entityLookupService.getRequiredWarehouseReference(
+                warehouseId,
+                "Warehouse ID is required to complete production stock movements"
+        );
         LocalDateTime now = LocalDateTime.now();
         explodeBomIfNoMaterialUsage(productionOrder);
 
         for (ProductionMaterialUsage usage : productionOrder.getMaterialUsages()) {
-            Item rawMaterial = getItem(usage.getRawMaterialId(), "Raw material not found with id: ");
-            BigDecimal quantityUsed = requirePositiveQuantity(usage.getQuantityUsed(), "Quantity used must be greater than 0");
+            Item rawMaterial = entityLookupService.getItem(usage.getRawMaterialId(), "Raw material not found with id: ");
+            BigDecimal quantityUsed = entityLookupService.requirePositiveQuantity(
+                    usage.getQuantityUsed(),
+                    "Quantity used must be greater than 0"
+            );
             Item updatedRawMaterial = itemStockService.decreaseStock(rawMaterial.getItemId(), warehouseId, quantityUsed);
             inventoryTransactionRepository.save(InventoryTransaction.builder()
                     .item(updatedRawMaterial)
@@ -141,7 +135,7 @@ public class ProductionOrderService {
                     .build());
         }
 
-        Item finishedProduct = getItem(
+        Item finishedProduct = entityLookupService.getItem(
                 productionOrder.getFinishedProductId(),
                 "Finished product not found with id: "
         );
@@ -189,43 +183,6 @@ public class ProductionOrderService {
         }
     }
 
-    private Item getItem(Long itemId, String messagePrefix) {
-        if (itemId == null) {
-            throw new BusinessException(messagePrefix + "null");
-        }
-
-        return itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException(messagePrefix + itemId));
-    }
-
-    private Employee getEmployeeReference(Long employeeId) {
-        if (employeeId == null) {
-            return null;
-        }
-
-        return entityManager.getReference(Employee.class, employeeId);
-    }
-
-    private Warehouse getWarehouseReference(Long warehouseId) {
-        if (warehouseId == null) {
-            throw new BusinessException("Warehouse ID is required to complete production stock movements");
-        }
-
-        return entityManager.getReference(Warehouse.class, warehouseId);
-    }
-
-    private BigDecimal getCurrentStock(Item item) {
-        return item.getCurrentStock() == null ? BigDecimal.ZERO : item.getCurrentStock();
-    }
-
-    private BigDecimal requirePositiveQuantity(BigDecimal quantity, String message) {
-        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException(message);
-        }
-
-        return quantity;
-    }
-
     private void explodeBomIfNoMaterialUsage(ProductionOrder productionOrder) {
         if (productionOrder.getMaterialUsages() != null && !productionOrder.getMaterialUsages().isEmpty()) {
             return;
@@ -259,5 +216,81 @@ public class ProductionOrderService {
         }
 
         productionOrder.setMaterialUsages(generatedUsages);
+    }
+
+    private void validateModifiable(ProductionOrder productionOrder) {
+        if (productionOrder.getStatus() != null && productionOrder.getStatus() != ProductionOrderStatus.Planned) {
+            throw new BusinessException("Cannot modify a production order that is already "
+                    + productionOrder.getStatus());
+        }
+    }
+
+    private void mergeMaterialUsages(ProductionOrder productionOrder, List<ProductionMaterialUsage> incomingUsages) {
+        List<ProductionMaterialUsage> requestedUsages = incomingUsages == null ? List.of() : incomingUsages;
+        Map<Long, ProductionMaterialUsage> existingById = productionOrder.getMaterialUsages().stream()
+                .filter(usage -> usage.getUsageId() != null)
+                .collect(Collectors.toMap(ProductionMaterialUsage::getUsageId, Function.identity()));
+
+        productionOrder.getMaterialUsages().removeIf(existing ->
+                existing.getUsageId() != null
+                        && requestedUsages.stream()
+                        .map(ProductionMaterialUsage::getUsageId)
+                        .filter(Objects::nonNull)
+                        .noneMatch(existing.getUsageId()::equals)
+        );
+
+        for (ProductionMaterialUsage incoming : requestedUsages) {
+            ProductionMaterialUsage target;
+            if (incoming.getUsageId() == null) {
+                target = new ProductionMaterialUsage();
+                target.setProductionOrder(productionOrder);
+                productionOrder.getMaterialUsages().add(target);
+            } else {
+                target = existingById.get(incoming.getUsageId());
+                if (target == null) {
+                    throw new BusinessException("Material usage does not belong to this production order: "
+                            + incoming.getUsageId());
+                }
+            }
+
+            target.setRawMaterialId(incoming.getRawMaterialId());
+            target.setQuantityUsed(incoming.getQuantityUsed());
+            target.setUsageDate(incoming.getUsageDate());
+        }
+    }
+
+    private void mergeAssignments(ProductionOrder productionOrder, List<ProductionAssignment> incomingAssignments) {
+        List<ProductionAssignment> requestedAssignments = incomingAssignments == null ? List.of() : incomingAssignments;
+        Map<Long, ProductionAssignment> existingById = productionOrder.getAssignments().stream()
+                .filter(assignment -> assignment.getAssignmentId() != null)
+                .collect(Collectors.toMap(ProductionAssignment::getAssignmentId, Function.identity()));
+
+        productionOrder.getAssignments().removeIf(existing ->
+                existing.getAssignmentId() != null
+                        && requestedAssignments.stream()
+                        .map(ProductionAssignment::getAssignmentId)
+                        .filter(Objects::nonNull)
+                        .noneMatch(existing.getAssignmentId()::equals)
+        );
+
+        for (ProductionAssignment incoming : requestedAssignments) {
+            ProductionAssignment target;
+            if (incoming.getAssignmentId() == null) {
+                target = new ProductionAssignment();
+                target.setProductionOrder(productionOrder);
+                productionOrder.getAssignments().add(target);
+            } else {
+                target = existingById.get(incoming.getAssignmentId());
+                if (target == null) {
+                    throw new BusinessException("Assignment does not belong to this production order: "
+                            + incoming.getAssignmentId());
+                }
+            }
+
+            target.setEmployeeId(incoming.getEmployeeId());
+            target.setRole(incoming.getRole());
+            target.setHoursWorked(incoming.getHoursWorked());
+            target.setAssignmentDate(incoming.getAssignmentDate());
+        }
     }
 }

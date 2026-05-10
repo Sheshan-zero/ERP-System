@@ -26,6 +26,7 @@ public class SalesOrderMapper {
         if (request.salesOrderItems() != null) {
             request.salesOrderItems().forEach(item -> salesOrder.getSalesOrderItems().add(
                     SalesOrderItem.builder()
+                            .salesOrderItemId(item.salesOrderItemId())
                             .salesOrder(salesOrder)
                             .finishedProductId(item.finishedProductId())
                             .quantity(item.quantity())
@@ -36,6 +37,7 @@ public class SalesOrderMapper {
         if (request.payments() != null) {
             request.payments().forEach(payment -> salesOrder.getPayments().add(
                     Payment.builder()
+                            .paymentId(payment.paymentId())
                             .salesOrder(salesOrder)
                             .paymentDate(payment.paymentDate())
                             .amount(payment.amount())

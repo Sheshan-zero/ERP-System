@@ -31,6 +31,7 @@ public class ProductionOrderMapper {
         if (request.materialUsages() != null) {
             request.materialUsages().forEach(usage -> productionOrder.getMaterialUsages().add(
                     ProductionMaterialUsage.builder()
+                            .usageId(usage.usageId())
                             .productionOrder(productionOrder)
                             .rawMaterialId(usage.rawMaterialId())
                             .quantityUsed(usage.quantityUsed())
@@ -41,6 +42,7 @@ public class ProductionOrderMapper {
         if (request.assignments() != null) {
             request.assignments().forEach(assignment -> productionOrder.getAssignments().add(
                     ProductionAssignment.builder()
+                            .assignmentId(assignment.assignmentId())
                             .productionOrder(productionOrder)
                             .employeeId(assignment.employeeId())
                             .role(assignment.role())

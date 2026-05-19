@@ -1,16 +1,13 @@
+Create a branch with your name
+ex: himansa-dev
+
 git switch himansa-dev
 
 # do coding
 
 git add .
-git commit -m "Added inventory update"
+git commit -m "Commit Message"
 
 git push origin himansa-dev
 
-git switch latest-release
 
-git pull
-
-git merge himansa-dev
-
-git push origin latest-release

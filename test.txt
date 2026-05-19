@@ -1,1 +1,16 @@
-test
+git switch himansa-dev
+
+# do coding
+
+git add .
+git commit -m "Added inventory update"
+
+git push origin himansa-dev
+
+git switch latest-release
+
+git pull
+
+git merge himansa-dev
+
+git push origin latest-release

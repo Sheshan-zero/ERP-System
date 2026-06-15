@@ -1,0 +1,411 @@
+.
+├── output.txt
+├── pom.xml
+├── src
+│   ├── main
+│   │   ├── java
+│   │   │   └── com
+│   │   │       └── erp
+│   │   │           └── manufacturing
+│   │   │               ├── auditlog
+│   │   │               │   ├── AuditLogController.java
+│   │   │               │   ├── AuditLog.java
+│   │   │               │   ├── AuditLogMapper.java
+│   │   │               │   ├── AuditLogRepository.java
+│   │   │               │   ├── AuditLogService.java
+│   │   │               │   └── dto
+│   │   │               │       └── AuditLogResponse.java
+│   │   │               ├── billofmaterial
+│   │   │               │   ├── BillOfMaterialController.java
+│   │   │               │   ├── BillOfMaterial.java
+│   │   │               │   ├── BillOfMaterialMapper.java
+│   │   │               │   ├── BillOfMaterialRepository.java
+│   │   │               │   ├── BillOfMaterialService.java
+│   │   │               │   └── dto
+│   │   │               │       ├── BillOfMaterialRequest.java
+│   │   │               │       └── BillOfMaterialResponse.java
+│   │   │               ├── common
+│   │   │               │   ├── ApiErrorResponse.java
+│   │   │               │   ├── BusinessException.java
+│   │   │               │   ├── constants
+│   │   │               │   │   └── DatabaseTableNames.java
+│   │   │               │   ├── DtoMapper.java
+│   │   │               │   ├── EntityLookupService.java
+│   │   │               │   ├── enums
+│   │   │               │   │   ├── AuditActionType.java
+│   │   │               │   │   ├── InventoryTransactionType.java
+│   │   │               │   │   ├── ProductionOrderStatus.java
+│   │   │               │   │   ├── PurchaseOrderStatus.java
+│   │   │               │   │   └── SalesOrderStatus.java
+│   │   │               │   ├── GlobalExceptionHandler.java
+│   │   │               │   └── ResourceNotFoundException.java
+│   │   │               ├── config
+│   │   │               │   ├── ModelMapperConfig.java
+│   │   │               │   ├── OpenApiConfig.java
+│   │   │               │   ├── SystemConfiguration.java
+│   │   │               │   ├── SystemConfigurationRepository.java
+│   │   │               │   └── SystemConfigurationService.java
+│   │   │               ├── customer
+│   │   │               │   ├── CustomerController.java
+│   │   │               │   ├── Customer.java
+│   │   │               │   ├── CustomerRepository.java
+│   │   │               │   ├── CustomerService.java
+│   │   │               │   └── dto
+│   │   │               │       ├── CustomerRequest.java
+│   │   │               │       └── CustomerResponse.java
+│   │   │               ├── dashboard
+│   │   │               │   ├── DashboardController.java
+│   │   │               │   ├── DashboardService.java
+│   │   │               │   └── dto
+│   │   │               │       ├── MonthlySalesSummaryDto.java
+│   │   │               │       ├── ProductionSummaryDto.java
+│   │   │               │       ├── SupplierPurchaseSummaryDto.java
+│   │   │               │       └── TopSellingProductDto.java
+│   │   │               ├── employee
+│   │   │               │   ├── dto
+│   │   │               │   │   ├── EmployeeRequest.java
+│   │   │               │   │   └── EmployeeResponse.java
+│   │   │               │   ├── EmployeeController.java
+│   │   │               │   ├── Employee.java
+│   │   │               │   ├── EmployeeRepository.java
+│   │   │               │   └── EmployeeService.java
+│   │   │               ├── inventorybalance
+│   │   │               │   ├── InventoryBalance.java
+│   │   │               │   ├── InventoryBalanceRepository.java
+│   │   │               │   └── InventoryBalanceService.java
+│   │   │               ├── inventorytransaction
+│   │   │               │   ├── dto
+│   │   │               │   │   ├── InventoryTransactionRequest.java
+│   │   │               │   │   ├── InventoryTransactionResponse.java
+│   │   │               │   │   └── WarehouseStockDto.java
+│   │   │               │   ├── InventoryTransactionController.java
+│   │   │               │   ├── InventoryTransaction.java
+│   │   │               │   ├── InventoryTransactionMapper.java
+│   │   │               │   ├── InventoryTransactionRepository.java
+│   │   │               │   └── InventoryTransactionService.java
+│   │   │               ├── item
+│   │   │               │   ├── dto
+│   │   │               │   │   ├── ItemRequest.java
+│   │   │               │   │   └── ItemResponse.java
+│   │   │               │   ├── ItemController.java
+│   │   │               │   ├── Item.java
+│   │   │               │   ├── ItemRepository.java
+│   │   │               │   ├── ItemService.java
+│   │   │               │   └── ItemStockService.java
+│   │   │               ├── ManufacturingErpApplication.java
+│   │   │               ├── production
+│   │   │               │   ├── dto
+│   │   │               │   │   ├── ProductionAssignmentRequest.java
+│   │   │               │   │   ├── ProductionAssignmentResponse.java
+│   │   │               │   │   ├── ProductionMaterialUsageRequest.java
+│   │   │               │   │   ├── ProductionMaterialUsageResponse.java
+│   │   │               │   │   ├── ProductionOrderRequest.java
+│   │   │               │   │   └── ProductionOrderResponse.java
+│   │   │               │   ├── ProductionAssignment.java
+│   │   │               │   ├── ProductionAssignmentRepository.java
+│   │   │               │   ├── ProductionMaterialUsage.java
+│   │   │               │   ├── ProductionMaterialUsageRepository.java
+│   │   │               │   ├── ProductionOrderController.java
+│   │   │               │   ├── ProductionOrder.java
+│   │   │               │   ├── ProductionOrderMapper.java
+│   │   │               │   ├── ProductionOrderRepository.java
+│   │   │               │   └── ProductionOrderService.java
+│   │   │               ├── purchaseorder
+│   │   │               │   ├── dto
+│   │   │               │   │   ├── PurchaseBillDto.java
+│   │   │               │   │   ├── PurchaseOrderItemRequest.java
+│   │   │               │   │   ├── PurchaseOrderItemResponse.java
+│   │   │               │   │   ├── PurchaseOrderRequest.java
+│   │   │               │   │   └── PurchaseOrderResponse.java
+│   │   │               │   ├── PurchaseOrderItem.java
+│   │   │               │   ├── PurchaseOrderItemRepository.java
+│   │   │               │   ├── PurchaseOrder.java
+│   │   │               │   ├── PurchaseOrderMapper.java
+│   │   │               │   └── PurchaseOrderRepository.java
+│   │   │               ├── salesorder
+│   │   │               │   ├── dto
+│   │   │               │   │   ├── PaymentRequest.java
+│   │   │               │   │   ├── PaymentResponse.java
+│   │   │               │   │   ├── SalesInvoiceDto.java
+│   │   │               │   │   ├── SalesOrderItemRequest.java
+│   │   │               │   │   ├── SalesOrderItemResponse.java
+│   │   │               │   │   ├── SalesOrderRequest.java
+│   │   │               │   │   └── SalesOrderResponse.java
+│   │   │               │   ├── Payment.java
+│   │   │               │   ├── PaymentRepository.java
+│   │   │               │   ├── SalesOrderController.java
+│   │   │               │   ├── SalesOrderItem.java
+│   │   │               │   ├── SalesOrderItemRepository.java
+│   │   │               │   ├── SalesOrder.java
+│   │   │               │   ├── SalesOrderMapper.java
+│   │   │               │   ├── SalesOrderRepository.java
+│   │   │               │   └── SalesOrderService.java
+│   │   │               ├── security
+│   │   │               │   ├── AppUser.java
+│   │   │               │   ├── AppUserRepository.java
+│   │   │               │   ├── AuthController.java
+│   │   │               │   ├── DatabaseUserDetailsService.java
+│   │   │               │   ├── dto
+│   │   │               │   │   ├── AuthRequest.java
+│   │   │               │   │   └── AuthResponse.java
+│   │   │               │   ├── JwtAuthenticationFilter.java
+│   │   │               │   ├── JwtService.java
+│   │   │               │   ├── SecurityConfig.java
+│   │   │               │   └── UserRole.java
+│   │   │               ├── supplier
+│   │   │               │   ├── dto
+│   │   │               │   │   ├── SupplierRequest.java
+│   │   │               │   │   └── SupplierResponse.java
+│   │   │               │   ├── SupplierController.java
+│   │   │               │   ├── Supplier.java
+│   │   │               │   ├── SupplierRepository.java
+│   │   │               │   └── SupplierService.java
+│   │   │               └── warehouse
+│   │   │                   ├── dto
+│   │   │                   │   ├── WarehouseRequest.java
+│   │   │                   │   └── WarehouseResponse.java
+│   │   │                   ├── WarehouseController.java
+│   │   │                   ├── Warehouse.java
+│   │   │                   ├── WarehouseRepository.java
+│   │   │                   └── WarehouseService.java
+│   │   └── resources
+│   │       ├── application.properties
+│   │       └── db
+│   │           └── manual
+│   │               ├── phase1_stabilization_security.sql
+│   │               ├── phase2_production_readiness.sql
+│   │               └── phase3_dynamic_configuration.sql
+│   └── test
+│       └── java
+│           └── com
+│               └── erp
+│                   └── manufacturing
+│                       ├── inventorybalance
+│                       │   └── InventoryBalanceServiceTest.java
+│                       └── item
+│                           └── ItemStockServiceTest.java
+├── target
+│   ├── classes
+│   │   ├── application.properties
+│   │   ├── com
+│   │   │   └── erp
+│   │   │       └── manufacturing
+│   │   │           ├── auditlog
+│   │   │           │   ├── AuditLog$AuditLogBuilder.class
+│   │   │           │   ├── AuditLog.class
+│   │   │           │   ├── AuditLogController.class
+│   │   │           │   ├── AuditLogMapper.class
+│   │   │           │   ├── AuditLogRepository.class
+│   │   │           │   ├── AuditLogService.class
+│   │   │           │   └── dto
+│   │   │           │       └── AuditLogResponse.class
+│   │   │           ├── billofmaterial
+│   │   │           │   ├── BillOfMaterial$BillOfMaterialBuilder.class
+│   │   │           │   ├── BillOfMaterial.class
+│   │   │           │   ├── BillOfMaterialController.class
+│   │   │           │   ├── BillOfMaterialMapper.class
+│   │   │           │   ├── BillOfMaterialRepository.class
+│   │   │           │   ├── BillOfMaterialService.class
+│   │   │           │   └── dto
+│   │   │           │       ├── BillOfMaterialRequest.class
+│   │   │           │       └── BillOfMaterialResponse.class
+│   │   │           ├── common
+│   │   │           │   ├── ApiErrorResponse.class
+│   │   │           │   ├── BusinessException.class
+│   │   │           │   ├── constants
+│   │   │           │   │   └── DatabaseTableNames.class
+│   │   │           │   ├── DtoMapper.class
+│   │   │           │   ├── EntityLookupService.class
+│   │   │           │   ├── enums
+│   │   │           │   │   ├── AuditActionType.class
+│   │   │           │   │   ├── InventoryTransactionType.class
+│   │   │           │   │   ├── ProductionOrderStatus.class
+│   │   │           │   │   ├── PurchaseOrderStatus.class
+│   │   │           │   │   └── SalesOrderStatus.class
+│   │   │           │   ├── GlobalExceptionHandler.class
+│   │   │           │   └── ResourceNotFoundException.class
+│   │   │           ├── config
+│   │   │           │   ├── ModelMapperConfig.class
+│   │   │           │   ├── OpenApiConfig.class
+│   │   │           │   ├── SystemConfiguration$SystemConfigurationBuilder.class
+│   │   │           │   ├── SystemConfiguration.class
+│   │   │           │   ├── SystemConfigurationRepository.class
+│   │   │           │   └── SystemConfigurationService.class
+│   │   │           ├── customer
+│   │   │           │   ├── Customer$CustomerBuilder.class
+│   │   │           │   ├── Customer.class
+│   │   │           │   ├── CustomerController.class
+│   │   │           │   ├── CustomerRepository.class
+│   │   │           │   ├── CustomerService.class
+│   │   │           │   └── dto
+│   │   │           │       ├── CustomerRequest.class
+│   │   │           │       └── CustomerResponse.class
+│   │   │           ├── dashboard
+│   │   │           │   ├── DashboardController.class
+│   │   │           │   ├── DashboardService.class
+│   │   │           │   └── dto
+│   │   │           │       ├── MonthlySalesSummaryDto.class
+│   │   │           │       ├── ProductionSummaryDto.class
+│   │   │           │       ├── SupplierPurchaseSummaryDto.class
+│   │   │           │       └── TopSellingProductDto.class
+│   │   │           ├── employee
+│   │   │           │   ├── dto
+│   │   │           │   │   ├── EmployeeRequest.class
+│   │   │           │   │   └── EmployeeResponse.class
+│   │   │           │   ├── Employee$EmployeeBuilder.class
+│   │   │           │   ├── Employee.class
+│   │   │           │   ├── EmployeeController.class
+│   │   │           │   ├── EmployeeRepository.class
+│   │   │           │   └── EmployeeService.class
+│   │   │           ├── inventorybalance
+│   │   │           │   ├── InventoryBalance$InventoryBalanceBuilder.class
+│   │   │           │   ├── InventoryBalance.class
+│   │   │           │   ├── InventoryBalanceRepository.class
+│   │   │           │   └── InventoryBalanceService.class
+│   │   │           ├── inventorytransaction
+│   │   │           │   ├── dto
+│   │   │           │   │   ├── InventoryTransactionRequest.class
+│   │   │           │   │   ├── InventoryTransactionResponse.class
+│   │   │           │   │   └── WarehouseStockDto.class
+│   │   │           │   ├── InventoryTransaction$InventoryTransactionBuilder.class
+│   │   │           │   ├── InventoryTransaction.class
+│   │   │           │   ├── InventoryTransactionController.class
+│   │   │           │   ├── InventoryTransactionMapper.class
+│   │   │           │   ├── InventoryTransactionRepository.class
+│   │   │           │   └── InventoryTransactionService.class
+│   │   │           ├── item
+│   │   │           │   ├── dto
+│   │   │           │   │   ├── ItemRequest.class
+│   │   │           │   │   └── ItemResponse.class
+│   │   │           │   ├── Item$ItemBuilder.class
+│   │   │           │   ├── Item.class
+│   │   │           │   ├── ItemController.class
+│   │   │           │   ├── ItemRepository.class
+│   │   │           │   ├── ItemService.class
+│   │   │           │   └── ItemStockService.class
+│   │   │           ├── ManufacturingErpApplication.class
+│   │   │           ├── production
+│   │   │           │   ├── dto
+│   │   │           │   │   ├── ProductionAssignmentRequest.class
+│   │   │           │   │   ├── ProductionAssignmentResponse.class
+│   │   │           │   │   ├── ProductionMaterialUsageRequest.class
+│   │   │           │   │   ├── ProductionMaterialUsageResponse.class
+│   │   │           │   │   ├── ProductionOrderRequest.class
+│   │   │           │   │   └── ProductionOrderResponse.class
+│   │   │           │   ├── ProductionAssignment$ProductionAssignmentBuilder.class
+│   │   │           │   ├── ProductionAssignment.class
+│   │   │           │   ├── ProductionAssignmentRepository.class
+│   │   │           │   ├── ProductionMaterialUsage$ProductionMaterialUsageBuilder.class
+│   │   │           │   ├── ProductionMaterialUsage.class
+│   │   │           │   ├── ProductionMaterialUsageRepository.class
+│   │   │           │   ├── ProductionOrder$ProductionOrderBuilder.class
+│   │   │           │   ├── ProductionOrder.class
+│   │   │           │   ├── ProductionOrderController.class
+│   │   │           │   ├── ProductionOrderMapper.class
+│   │   │           │   ├── ProductionOrderRepository.class
+│   │   │           │   └── ProductionOrderService.class
+│   │   │           ├── purchaseorder
+│   │   │           │   ├── dto
+│   │   │           │   │   ├── PurchaseBillDto.class
+│   │   │           │   │   ├── PurchaseOrderItemRequest.class
+│   │   │           │   │   ├── PurchaseOrderItemResponse.class
+│   │   │           │   │   ├── PurchaseOrderRequest.class
+│   │   │           │   │   └── PurchaseOrderResponse.class
+│   │   │           │   ├── PurchaseOrder$PurchaseOrderBuilder.class
+│   │   │           │   ├── PurchaseOrder.class
+│   │   │           │   ├── PurchaseOrderItem$PurchaseOrderItemBuilder.class
+│   │   │           │   ├── PurchaseOrderItem.class
+│   │   │           │   ├── PurchaseOrderItemRepository.class
+│   │   │           │   ├── PurchaseOrderMapper.class
+│   │   │           │   └── PurchaseOrderRepository.class
+│   │   │           ├── salesorder
+│   │   │           │   ├── dto
+│   │   │           │   │   ├── PaymentRequest.class
+│   │   │           │   │   ├── PaymentResponse.class
+│   │   │           │   │   ├── SalesInvoiceDto.class
+│   │   │           │   │   ├── SalesOrderItemRequest.class
+│   │   │           │   │   ├── SalesOrderItemResponse.class
+│   │   │           │   │   ├── SalesOrderRequest.class
+│   │   │           │   │   └── SalesOrderResponse.class
+│   │   │           │   ├── Payment$PaymentBuilder.class
+│   │   │           │   ├── Payment.class
+│   │   │           │   ├── PaymentRepository.class
+│   │   │           │   ├── SalesOrder$SalesOrderBuilder.class
+│   │   │           │   ├── SalesOrder.class
+│   │   │           │   ├── SalesOrderController.class
+│   │   │           │   ├── SalesOrderItem$SalesOrderItemBuilder.class
+│   │   │           │   ├── SalesOrderItem.class
+│   │   │           │   ├── SalesOrderItemRepository.class
+│   │   │           │   ├── SalesOrderMapper.class
+│   │   │           │   ├── SalesOrderRepository.class
+│   │   │           │   └── SalesOrderService.class
+│   │   │           ├── security
+│   │   │           │   ├── AppUser$AppUserBuilder.class
+│   │   │           │   ├── AppUser.class
+│   │   │           │   ├── AppUserRepository.class
+│   │   │           │   ├── AuthController.class
+│   │   │           │   ├── DatabaseUserDetailsService.class
+│   │   │           │   ├── dto
+│   │   │           │   │   ├── AuthRequest.class
+│   │   │           │   │   └── AuthResponse.class
+│   │   │           │   ├── JwtAuthenticationFilter.class
+│   │   │           │   ├── JwtService.class
+│   │   │           │   ├── SecurityConfig.class
+│   │   │           │   └── UserRole.class
+│   │   │           ├── supplier
+│   │   │           │   ├── dto
+│   │   │           │   │   ├── SupplierRequest.class
+│   │   │           │   │   └── SupplierResponse.class
+│   │   │           │   ├── Supplier$SupplierBuilder.class
+│   │   │           │   ├── Supplier.class
+│   │   │           │   ├── SupplierController.class
+│   │   │           │   ├── SupplierRepository.class
+│   │   │           │   └── SupplierService.class
+│   │   │           └── warehouse
+│   │   │               ├── dto
+│   │   │               │   ├── WarehouseRequest.class
+│   │   │               │   └── WarehouseResponse.class
+│   │   │               ├── Warehouse$WarehouseBuilder.class
+│   │   │               ├── Warehouse.class
+│   │   │               ├── WarehouseController.class
+│   │   │               ├── WarehouseRepository.class
+│   │   │               └── WarehouseService.class
+│   │   └── db
+│   │       └── manual
+│   │           ├── phase1_stabilization_security.sql
+│   │           ├── phase2_production_readiness.sql
+│   │           └── phase3_dynamic_configuration.sql
+│   ├── generated-sources
+│   │   └── annotations
+│   ├── generated-test-sources
+│   │   └── test-annotations
+│   ├── maven-status
+│   │   └── maven-compiler-plugin
+│   │       ├── compile
+│   │       │   └── default-compile
+│   │       │       ├── createdFiles.lst
+│   │       │       └── inputFiles.lst
+│   │       └── testCompile
+│   │           └── default-testCompile
+│   │               ├── createdFiles.lst
+│   │               └── inputFiles.lst
+│   └── test-classes
+│       └── com
+│           └── erp
+│               └── manufacturing
+│                   ├── inventorybalance
+│                   │   └── InventoryBalanceServiceTest.class
+│                   └── item
+│                       └── ItemStockServiceTest.class
+└── wallet
+    ├── cwallet.sso
+    ├── ewallet.p12
+    ├── ewallet.pem
+    ├── keystore.jks
+    ├── ojdbc.properties
+    ├── README
+    ├── sqlnet.ora
+    ├── tnsnames.ora
+    └── truststore.jks
+
+103 directories, 306 files

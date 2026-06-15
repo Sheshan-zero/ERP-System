@@ -1,0 +1,12 @@
+company_high = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.ap-hyderabad-1.oraclecloud.com))(connect_data=(service_name=g4ceccfa1667087_company_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+company_medium = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.ap-hyderabad-1.oraclecloud.com))(connect_data=(service_name=g4ceccfa1667087_company_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+company_low = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.ap-hyderabad-1.oraclecloud.com))(connect_data=(service_name=g4ceccfa1667087_company_low.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+company_tp = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.ap-hyderabad-1.oraclecloud.com))(connect_data=(service_name=g4ceccfa1667087_company_tp.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+company_tpurgent = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.ap-hyderabad-1.oraclecloud.com))(connect_data=(service_name=g4ceccfa1667087_company_tpurgent.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+
+

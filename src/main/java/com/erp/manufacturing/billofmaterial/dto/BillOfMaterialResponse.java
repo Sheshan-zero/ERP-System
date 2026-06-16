@@ -1,14 +1,31 @@
 package com.erp.manufacturing.billofmaterial.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 
-public record BillOfMaterialResponse(
-        Long bomId,
-        Long finishedProductId,
-        String finishedProductName,
-        Long rawMaterialId,
-        String rawMaterialName,
-        BigDecimal requiredQuantity,
-        BigDecimal wastagePercentage
-) {
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class BillOfMaterialResponse {
+
+    private Long bomId;
+
+    private Long finishedProductId;
+
+    private String finishedProductName;
+
+    private Long rawMaterialId;
+
+    private String rawMaterialName;
+
+    private BigDecimal requiredQuantity;
+
+    private BigDecimal wastagePercentage;
 }

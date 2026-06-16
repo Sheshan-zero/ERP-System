@@ -1,13 +1,24 @@
 package com.erp.manufacturing.supplier.dto;
 
-public record SupplierResponse(
-        Long supplierId,
-        String supplierName,
-        String contactNo,
-        String email,
-        String address,
-        String supplierStatus,
-        String contactPerson,
-        String phone
-) {
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class SupplierResponse {
+
+        private Long supplierId;
+        private String supplierName;
+        private String contactNo;
+        private String email;
+        private String address;
+        private String supplierStatus;
+        private String contactPerson;
+        private String phone;
 }

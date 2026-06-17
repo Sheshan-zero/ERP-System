@@ -1,12 +1,19 @@
 package com.erp.manufacturing.purchaseorder.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 
-public record PurchaseOrderItemResponse(
-        Long purchaseOrderItemId,
-        Long rawMaterialId,
-        BigDecimal quantity,
-        BigDecimal unitPrice,
-        BigDecimal lineTotal
-) {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PurchaseOrderItemResponse {
+
+        private Long purchaseOrderItemId;
+        private Long rawMaterialId;
+        private BigDecimal quantity;
+        private BigDecimal unitPrice;
+        private BigDecimal lineTotal;
 }

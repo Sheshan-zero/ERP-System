@@ -21,12 +21,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/production-orders")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @Tag(name = "Production Orders", description = "Manage production orders and completion workflow")
 public class ProductionOrderController {
 

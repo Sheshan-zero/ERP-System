@@ -7,12 +7,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Component
 public class PurchaseOrderMapper {
 
     public PurchaseOrder toEntity(PurchaseOrderRequest request) {
+
         PurchaseOrder purchaseOrder = PurchaseOrder.builder()
                 .supplierId(request.supplierId())
                 .employeeId(request.employeeId())
@@ -23,30 +25,42 @@ public class PurchaseOrderMapper {
                 .build();
 
         if (request.purchaseOrderItems() != null) {
-            request.purchaseOrderItems().forEach(itemRequest -> purchaseOrder.getPurchaseOrderItems().add(
-                    PurchaseOrderItem.builder()
-                            .purchaseOrderItemId(itemRequest.purchaseOrderItemId())
-                            .purchaseOrder(purchaseOrder)
-                            .rawMaterialId(itemRequest.rawMaterialId())
-                            .quantity(itemRequest.quantity())
-                            .unitPrice(itemRequest.unitPrice())
-                            .build()
-            ));
+
+            request.purchaseOrderItems().forEach(itemRequest -> {
+
+                PurchaseOrderItem item = PurchaseOrderItem.builder()
+                        .purchaseOrderItemId(itemRequest.purchaseOrderItemId())
+                        .rawMaterialId(itemRequest.rawMaterialId())
+                        .quantity(itemRequest.quantity())
+                        .unitPrice(itemRequest.unitPrice())
+                        .build();
+
+                item.setPurchaseOrder(purchaseOrder);
+
+                purchaseOrder.getPurchaseOrderItems().add(item);
+            });
         }
 
         return purchaseOrder;
     }
 
     public PurchaseOrderResponse toResponse(PurchaseOrder purchaseOrder) {
-        List<PurchaseOrderItemResponse> items = purchaseOrder.getPurchaseOrderItems().stream()
-                .map(item -> new PurchaseOrderItemResponse(
-                        item.getPurchaseOrderItemId(),
-                        item.getRawMaterialId(),
-                        item.getQuantity(),
-                        item.getUnitPrice(),
-                        item.getLineTotal()
-                ))
-                .toList();
+
+        List<PurchaseOrderItemResponse> items = Collections.emptyList();
+
+        if (purchaseOrder.getPurchaseOrderItems() != null) {
+
+            items = purchaseOrder.getPurchaseOrderItems()
+                    .stream()
+                    .map(item -> new PurchaseOrderItemResponse(
+                            item.getPurchaseOrderItemId(),
+                            item.getRawMaterialId(),
+                            item.getQuantity(),
+                            item.getUnitPrice(),
+                            item.getLineTotal()
+                    ))
+                    .toList();
+        }
 
         return new PurchaseOrderResponse(
                 purchaseOrder.getPurchaseOrderId(),

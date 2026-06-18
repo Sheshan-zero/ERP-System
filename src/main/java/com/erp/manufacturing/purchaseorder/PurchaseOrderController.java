@@ -31,98 +31,98 @@ import java.util.Map;
 @Tag(name = "Purchase Orders", description = "Manage purchase orders and receiving workflow")
 public class PurchaseOrderController {
 
-        private final PurchaseOrderService purchaseOrderService;
-        private final PurchaseOrderMapper purchaseOrderMapper;
+    private final PurchaseOrderService purchaseOrderService;
+    private final PurchaseOrderMapper purchaseOrderMapper;
 
-        @GetMapping
-        @Operation(summary = "Get all purchase orders")
-        @ApiResponse(responseCode = "200", description = "Purchase orders retrieved successfully")
-        public ResponseEntity<Page<PurchaseOrderResponse>> getAllPurchaseOrders(Pageable pageable) {
-                return ResponseEntity.ok(purchaseOrderMapper
-                                .toResponsePage(purchaseOrderService.getAllPurchaseOrders(pageable)));
-        }
+    @GetMapping
+    @Operation(summary = "Get all purchase orders")
+    @ApiResponse(responseCode = "200", description = "Purchase orders retrieved successfully")
+    public ResponseEntity<Page<PurchaseOrderResponse>> getAllPurchaseOrders(Pageable pageable) {
+        return ResponseEntity.ok(purchaseOrderMapper.toResponsePage(purchaseOrderService.getAllPurchaseOrders(pageable)));
+    }
 
-        @GetMapping("/{id}")
-        @Operation(summary = "Get purchase order by ID")
-        @ApiResponses({
-                        @ApiResponse(responseCode = "200", description = "Purchase order retrieved successfully"),
-                        @ApiResponse(responseCode = "404", description = "Purchase order not found")
-        })
-        public ResponseEntity<PurchaseOrderResponse> getPurchaseOrderById(@PathVariable Long id) {
-                return ResponseEntity.ok(purchaseOrderMapper.toResponse(purchaseOrderService.getPurchaseOrderById(id)));
-        }
+    @GetMapping("/{id}")
+    @Operation(summary = "Get purchase order by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Purchase order retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Purchase order not found")
+    })
+    public ResponseEntity<PurchaseOrderResponse> getPurchaseOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(purchaseOrderMapper.toResponse(purchaseOrderService.getPurchaseOrderById(id)));
+    }
 
-        @GetMapping("/{id}/bill")
-        public ResponseEntity<PurchaseBillDto> generateBill(@PathVariable Long id) {
-                return ResponseEntity.ok(purchaseOrderService.generateBill(id));
-        }
+    @GetMapping("/{id}/bill")
+    public ResponseEntity<PurchaseBillDto> generateBill(@PathVariable Long id) {
+        return ResponseEntity.ok(purchaseOrderService.generateBill(id));
+    }
 
-        @PostMapping
-        @Operation(summary = "Create purchase order", description = "Creates a purchase order with optional nested line items.")
-        @ApiResponses({
-                        @ApiResponse(responseCode = "201", description = "Purchase order created successfully"),
-                        @ApiResponse(responseCode = "400", description = "Invalid purchase order request")
-        })
-        public ResponseEntity<PurchaseOrderResponse> createPurchaseOrder(
-                        @Valid @RequestBody PurchaseOrderRequest request) {
-                PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(request);
-                return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(purchaseOrderMapper
-                                                .toResponse(purchaseOrderService.createPurchaseOrder(purchaseOrder)));
-        }
+    @PostMapping
+    @Operation(summary = "Create purchase order", description = "Creates a purchase order with optional nested line items.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Purchase order created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid purchase order request")
+    })
+    public ResponseEntity<PurchaseOrderResponse> createPurchaseOrder(@Valid @RequestBody PurchaseOrderRequest request) {
+        PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(purchaseOrderMapper.toResponse(purchaseOrderService.createPurchaseOrder(purchaseOrder)));
+    }
 
-        @PutMapping("/{id}")
-        @Operation(summary = "Update purchase order")
-        @ApiResponses({
-                        @ApiResponse(responseCode = "200", description = "Purchase order updated successfully"),
-                        @ApiResponse(responseCode = "404", description = "Purchase order not found")
-        })
-        public ResponseEntity<PurchaseOrderResponse> updatePurchaseOrder(
-                        @PathVariable Long id,
-                        @Valid @RequestBody PurchaseOrderRequest request) {
-                PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(request);
-                return ResponseEntity.ok(purchaseOrderMapper
-                                .toResponse(purchaseOrderService.updatePurchaseOrder(id, purchaseOrder)));
-        }
+    @PutMapping("/{id}")
+    @Operation(summary = "Update purchase order")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Purchase order updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Purchase order not found")
+    })
+    public ResponseEntity<PurchaseOrderResponse> updatePurchaseOrder(
+            @PathVariable Long id,
+            @Valid @RequestBody PurchaseOrderRequest request
+    ) {
+        PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(request);
+        return ResponseEntity.ok(purchaseOrderMapper.toResponse(purchaseOrderService.updatePurchaseOrder(id, purchaseOrder)));
+    }
 
-        @PostMapping("/{id}/receive")
-        @Operation(summary = "Receive purchase order", description = "Receives a purchase order and increases raw material stock.")
-        @ApiResponses({
-                        @ApiResponse(responseCode = "200", description = "Purchase order received successfully"),
-                        @ApiResponse(responseCode = "400", description = "Purchase order cannot be received"),
-                        @ApiResponse(responseCode = "404", description = "Purchase order not found")
-        })
-        public ResponseEntity<Map<String, Object>> receivePurchaseOrder(
-                        @PathVariable Long id,
-                        @RequestParam(required = false) Long employeeId,
-                        @RequestParam Long warehouseId) {
-                PurchaseOrder receivedPurchaseOrder = purchaseOrderService.receivePurchaseOrder(id, employeeId,
-                                warehouseId);
+    @PostMapping("/{id}/receive")
+    @Operation(summary = "Receive purchase order", description = "Receives a purchase order and increases raw material stock.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Purchase order received successfully"),
+            @ApiResponse(responseCode = "400", description = "Purchase order cannot be received"),
+            @ApiResponse(responseCode = "404", description = "Purchase order not found")
+    })
+    public ResponseEntity<Map<String, Object>> receivePurchaseOrder(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam Long warehouseId
+    ) {
+        PurchaseOrder receivedPurchaseOrder = purchaseOrderService.receivePurchaseOrder(id, employeeId, warehouseId);
 
-                return ResponseEntity.ok(Map.of(
-                                "message", "Purchase order received successfully",
-                                "purchaseOrder", purchaseOrderMapper.toResponse(receivedPurchaseOrder)));
-        }
+        return ResponseEntity.ok(Map.of(
+                "message", "Purchase order received successfully",
+                "purchaseOrder", purchaseOrderMapper.toResponse(receivedPurchaseOrder)
+        ));
+    }
 
-        @PostMapping("/{id}/approve")
-        public ResponseEntity<Map<String, Object>> approvePurchaseOrder(
-                        @PathVariable Long id,
-                        @RequestParam Long employeeId) {
-                PurchaseOrder approvedPurchaseOrder = purchaseOrderService.approvePurchaseOrder(id, employeeId);
+    @PostMapping("/{id}/approve")
+    public ResponseEntity<Map<String, Object>> approvePurchaseOrder(
+            @PathVariable Long id,
+            @RequestParam Long employeeId
+    ) {
+        PurchaseOrder approvedPurchaseOrder = purchaseOrderService.approvePurchaseOrder(id, employeeId);
 
-                return ResponseEntity.ok(Map.of(
-                                "message", "Purchase order approved successfully",
-                                "purchaseOrder", purchaseOrderMapper.toResponse(approvedPurchaseOrder)));
-        }
+        return ResponseEntity.ok(Map.of(
+                "message", "Purchase order approved successfully",
+                "purchaseOrder", purchaseOrderMapper.toResponse(approvedPurchaseOrder)
+        ));
+    }
 
-        @DeleteMapping("/{id}")
-        @Operation(summary = "Delete purchase order")
-        @ApiResponses({
-                        @ApiResponse(responseCode = "204", description = "Purchase order deleted successfully"),
-                        @ApiResponse(responseCode = "404", description = "Purchase order not found")
-        })
-        public ResponseEntity<Void> deletePurchaseOrder(@PathVariable Long id) {
-                purchaseOrderService.deletePurchaseOrder(id);
-                return ResponseEntity.noContent().build();
-        }
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete purchase order")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Purchase order deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Purchase order not found")
+    })
+    public ResponseEntity<Void> deletePurchaseOrder(@PathVariable Long id) {
+        purchaseOrderService.deletePurchaseOrder(id);
+        return ResponseEntity.noContent().build();
+    }
 }

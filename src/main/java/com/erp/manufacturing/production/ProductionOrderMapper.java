@@ -55,41 +55,23 @@ public class ProductionOrderMapper {
         return productionOrder;
     }
 
-    public ProductionOrderResponse toResponse(ProductionOrder productionOrder) {
-        List<ProductionMaterialUsageResponse> usages = productionOrder.getMaterialUsages().stream()
-                .map(usage -> new ProductionMaterialUsageResponse(
-                        usage.getUsageId(),
-                        usage.getRawMaterialId(),
-                        usage.getQuantityUsed(),
-                        usage.getUsageDate()
-                ))
-                .toList();
-        List<ProductionAssignmentResponse> assignments = productionOrder.getAssignments().stream()
-                .map(assignment -> new ProductionAssignmentResponse(
-                        assignment.getAssignmentId(),
-                        assignment.getEmployeeId(),
-                        assignment.getRole(),
-                        assignment.getHoursWorked(),
-                        assignment.getAssignmentDate()
-                ))
-                .toList();
+public ProductionOrderResponse toResponse(ProductionOrder productionOrder) {
 
-        return new ProductionOrderResponse(
-                productionOrder.getProductionOrderId(),
-                productionOrder.getFinishedProductId(),
-                productionOrder.getEmployeeId(),
-                productionOrder.getProductionDate(),
-                productionOrder.getQuantityToProduce(),
-                productionOrder.getQuantityProduced(),
-                productionOrder.getStatus(),
-                productionOrder.getStartDate(),
-                productionOrder.getEndDate(),
-                productionOrder.getPriority(),
-                usages,
-                assignments
-        );
-    }
-
+    return new ProductionOrderResponse(
+            productionOrder.getProductionOrderId(),
+            productionOrder.getFinishedProductId(),
+            productionOrder.getEmployeeId(),
+            productionOrder.getProductionDate(),
+            productionOrder.getQuantityToProduce(),
+            productionOrder.getQuantityProduced(),
+            productionOrder.getStatus(),
+            productionOrder.getStartDate(),
+            productionOrder.getEndDate(),
+            productionOrder.getPriority(),
+            List.of(), // material usages
+            List.of()  // assignments
+    );
+}
     public Page<ProductionOrderResponse> toResponsePage(Page<ProductionOrder> page) {
         return page.map(this::toResponse);
     }

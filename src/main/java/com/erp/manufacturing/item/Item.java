@@ -18,6 +18,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -73,7 +74,8 @@ public class Item {
     @Column(name = "DESCRIPTION", length = 255)
     private String description;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "CREATED_DATE", updatable = false)
+    @CreationTimestamp
     private LocalDateTime createdDate;
 
     @Version

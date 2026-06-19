@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -29,7 +31,7 @@ public class ItemService {
         if (item.getItemId() != null && itemRepository.existsById(item.getItemId())) {
             throw new IllegalArgumentException("Item already exists with id: " + item.getItemId());
         }
-
+        item.setCreatedDate(LocalDateTime.now());
         return itemRepository.save(item);
     }
 
@@ -43,7 +45,6 @@ public class ItemService {
         existingItem.setReorderLevel(item.getReorderLevel());
         existingItem.setItemStatus(item.getItemStatus());
         existingItem.setDescription(item.getDescription());
-        existingItem.setCreatedDate(item.getCreatedDate());
 
         return itemRepository.save(existingItem);
     }

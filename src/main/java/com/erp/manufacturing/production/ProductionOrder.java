@@ -60,6 +60,7 @@ public class ProductionOrder {
     @Column(name = "QUANTITY_PRODUCED", precision = 10, scale = 2)
     private BigDecimal quantityProduced;
 
+    @Size(max = 30, message = "Status must not exceed 30 characters")
     @Column(name = "STATUS", length = 30)
     @Enumerated(EnumType.STRING)
     private ProductionOrderStatus status;

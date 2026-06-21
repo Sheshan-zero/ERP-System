@@ -43,11 +43,13 @@ public class InventoryBalance {
     @Column(name = "INVENTORY_BALANCE_ID", nullable = false)
     private Long inventoryBalanceId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ITEM_ID", nullable = false)
     private Item item;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "WAREHOUSE_ID", nullable = false)
     private Warehouse warehouse;
 

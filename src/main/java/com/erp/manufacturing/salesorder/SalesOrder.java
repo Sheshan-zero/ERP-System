@@ -22,7 +22,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import jakarta.persistence.FetchType;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -52,6 +52,7 @@ public class SalesOrder {
     @Column(name = "ORDER_DATE")
     private LocalDateTime orderDate;
 
+    @Size(max = 30, message = "Order status must not exceed 30 characters")
     @Column(name = "ORDER_STATUS", length = 30)
     @Enumerated(EnumType.STRING)
     private SalesOrderStatus orderStatus;
@@ -62,23 +63,13 @@ public class SalesOrder {
     @Valid
     @Builder.Default
     @JsonManagedReference(value = "sales-order-items")
-    @OneToMany(
-            mappedBy = "salesOrder",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true,
-            fetch = FetchType.EAGER
-    )
+    @OneToMany(mappedBy = "salesOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SalesOrderItem> salesOrderItems = new ArrayList<>();
 
     @Valid
     @Builder.Default
     @JsonManagedReference(value = "sales-order-payments")
-    @OneToMany(
-            mappedBy = "salesOrder",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true,
-            fetch = FetchType.EAGER
-    )
+    @OneToMany(mappedBy = "salesOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments = new ArrayList<>();
 
     @Version

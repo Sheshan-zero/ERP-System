@@ -1,14 +1,20 @@
 package com.erp.manufacturing.salesorder.dto;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
-public record SalesOrderItemRequest(
-        Long salesOrderItemId,
-        @NotNull Long finishedProductId,
-        @NotNull @Positive BigDecimal quantity,
-        @NotNull @Positive BigDecimal unitPrice
-) {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class SalesOrderItemRequest {
+    private Long salesOrderItemId;
+    private @NotNull Long finishedProductId;
+    private @NotNull @Positive BigDecimal quantity;
+    private @NotNull @Positive BigDecimal unitPrice;
 }

@@ -1,12 +1,18 @@
 package com.erp.manufacturing.inventorytransaction.dto;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 import java.math.BigDecimal;
 
-public record WarehouseStockDto(
-        Long itemId,
-        String itemName,
-        Long warehouseId,
-        String warehouseName,
-        BigDecimal quantityOnHand
-) {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class WarehouseStockDto {
+    private Long itemId;
+    private String itemName;
+    private Long warehouseId;
+    private String warehouseName;
+    private BigDecimal quantityOnHand;
 }

@@ -97,22 +97,18 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
     }
 
-@ExceptionHandler(Exception.class)
-public ResponseEntity<ApiErrorResponse> handleGenericException(
-        Exception exception,
-        HttpServletRequest request
-) {
-
-    exception.printStackTrace();
-
-    return buildResponse(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            exception.getClass().getName()
-                    + " : "
-                    + exception.getMessage(),
-            request
-    );
-}
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorResponse> handleGenericException(
+            Exception exception,
+            HttpServletRequest request
+    ) {
+        String msg = exception.getMessage() != null ? exception.getMessage() : exception.toString();
+        // optionally include the cause
+        if (exception.getCause() != null) {
+            msg += " | Cause: " + exception.getCause().getMessage();
+        }
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error: " + msg, request);
+    }
 
     private ResponseEntity<ApiErrorResponse> buildResponse(
             HttpStatus status,

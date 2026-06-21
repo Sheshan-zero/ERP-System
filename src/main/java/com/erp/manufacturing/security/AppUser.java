@@ -11,7 +11,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Table;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -44,6 +48,12 @@ public class AppUser {
 
     @Column(name = "ENABLED", nullable = false)
     private Boolean enabled;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "APP_USER_PERMISSION", joinColumns = @JoinColumn(name = "USER_ID"))
+    @Column(name = "PERMISSION_CODE", nullable = false, length = 100)
+    @Builder.Default
+    private Set<String> permissionCodes = new HashSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "EMPLOYEE_ID")

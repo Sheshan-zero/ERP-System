@@ -27,17 +27,23 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                request.username(),
-                request.password()
+                request.getUsername(),
+                request.getPassword()
         ));
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
+        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         String token = jwtService.generateToken(userDetails);
         String role = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
+                .filter(auth -> auth.startsWith("ROLE_"))
                 .findFirst()
                 .orElse("");
 
-        return ResponseEntity.ok(new AuthResponse(token, "Bearer", userDetails.getUsername(), role));
+        java.util.List<String> permissions = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(auth -> !auth.startsWith("ROLE_"))
+                .toList();
+
+        return ResponseEntity.ok(new AuthResponse(token, "Bearer", userDetails.getUsername(), role, permissions));
     }
 }

@@ -1,27 +1,18 @@
 package com.erp.manufacturing.warehouse.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Getter
-@Setter
-@Builder
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class WarehouseResponse {
-
-        private Long warehouseId;
-
-        private String warehouseName;
-
-        private String location;
-
-        private BigDecimal capacity;
-
-        private String managerName;
+    private Long warehouseId;
+    private String warehouseName;
+    private String location;
+    private BigDecimal capacity;
+    private String managerName;
 }

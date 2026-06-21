@@ -13,10 +13,10 @@ public class BillOfMaterialMapper {
 
     public BillOfMaterial toEntity(BillOfMaterialRequest request) {
         return BillOfMaterial.builder()
-                .finishedProduct(Item.builder().itemId(request.finishedProductId()).build())
-                .rawMaterial(Item.builder().itemId(request.rawMaterialId()).build())
-                .requiredQuantity(request.requiredQuantity())
-                .wastagePercentage(request.wastagePercentage())
+                .finishedProduct(Item.builder().itemId(request.getFinishedProductId()).build())
+                .rawMaterial(Item.builder().itemId(request.getRawMaterialId()).build())
+                .requiredQuantity(request.getRequiredQuantity())
+                .wastagePercentage(request.getWastagePercentage())
                 .build();
     }
 

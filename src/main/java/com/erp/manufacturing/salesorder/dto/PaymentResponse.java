@@ -1,13 +1,19 @@
 package com.erp.manufacturing.salesorder.dto;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record PaymentResponse(
-        Long paymentId,
-        LocalDateTime paymentDate,
-        BigDecimal amount,
-        String paymentMethod,
-        String paymentStatus
-) {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PaymentResponse {
+    private Long paymentId;
+    private LocalDateTime paymentDate;
+    private BigDecimal amount;
+    private String paymentMethod;
+    private String paymentStatus;
 }

@@ -13,13 +13,13 @@ public class InventoryTransactionMapper {
 
     public InventoryTransaction toEntity(InventoryTransactionRequest request) {
         return InventoryTransaction.builder()
-                .item(Item.builder().itemId(request.itemId()).build())
-                .warehouse(request.warehouseId() == null ? null : Warehouse.builder().warehouseId(request.warehouseId()).build())
-                .employee(request.employeeId() == null ? null : Employee.builder().employeeId(request.employeeId()).build())
-                .transactionType(request.transactionType())
-                .quantity(request.quantity())
-                .transactionDate(request.transactionDate())
-                .remarks(request.remarks())
+                .item(Item.builder().itemId(request.getItemId()).build())
+                .warehouse(request.getWarehouseId() == null ? null : Warehouse.builder().warehouseId(request.getWarehouseId()).build())
+                .employee(request.getEmployeeId() == null ? null : Employee.builder().employeeId(request.getEmployeeId()).build())
+                .transactionType(request.getTransactionType())
+                .quantity(request.getQuantity())
+                .transactionDate(request.getTransactionDate())
+                .remarks(request.getRemarks())
                 .build();
     }
 

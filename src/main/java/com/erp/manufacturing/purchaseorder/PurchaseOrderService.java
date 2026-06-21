@@ -1,21 +1,24 @@
 package com.erp.manufacturing.purchaseorder;
 
+import com.erp.manufacturing.accounting.GeneralLedgerService;
 import com.erp.manufacturing.auditlog.AuditLog;
 import com.erp.manufacturing.auditlog.AuditLogRepository;
 import com.erp.manufacturing.common.BusinessException;
 import com.erp.manufacturing.common.EntityLookupService;
+import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.common.constants.DatabaseTableNames;
 import com.erp.manufacturing.common.enums.AuditActionType;
 import com.erp.manufacturing.common.enums.InventoryTransactionType;
 import com.erp.manufacturing.common.enums.PurchaseOrderStatus;
-import com.erp.manufacturing.common.ResourceNotFoundException;
 import com.erp.manufacturing.config.SystemConfigurationService;
 import com.erp.manufacturing.employee.Employee;
 import com.erp.manufacturing.inventorytransaction.InventoryTransaction;
 import com.erp.manufacturing.inventorytransaction.InventoryTransactionRepository;
 import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemStockService;
-import com.erp.manufacturing.purchaseorder.dto.PurchaseBillDto;
+import com.erp.manufacturing.notification.NotificationService;
+import com.erp.manufacturing.supplier.Supplier;
+import com.erp.manufacturing.supplier.SupplierRepository;
 import com.erp.manufacturing.warehouse.Warehouse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,12 +40,17 @@ import java.util.stream.Collectors;
 @Transactional
 public class PurchaseOrderService {
 
+    private static final BigDecimal DEFAULT_APPROVAL_THRESHOLD = new BigDecimal("100000");
+
     private final PurchaseOrderRepository purchaseOrderRepository;
+    private final SupplierRepository supplierRepository;
     private final ItemStockService itemStockService;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final AuditLogRepository auditLogRepository;
     private final EntityLookupService entityLookupService;
     private final SystemConfigurationService systemConfigurationService;
+    private final GeneralLedgerService generalLedgerService;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public Page<PurchaseOrder> getAllPurchaseOrders(Pageable pageable) {
@@ -62,14 +70,32 @@ public class PurchaseOrderService {
                     + purchaseOrder.getPurchaseOrderId());
         }
 
-        attachItemsAndCalculateTotals(purchaseOrder);
-        applyApprovalStatus(purchaseOrder);
-        return purchaseOrderRepository.save(purchaseOrder);
+        ensureSupplierExists(purchaseOrder.getSupplierId());
+        attachChildrenAndCalculateTotals(purchaseOrder);
+        if (purchaseOrder.getOrderDate() == null) {
+            purchaseOrder.setOrderDate(LocalDateTime.now());
+        }
+        if (purchaseOrder.getStatus() == null) {
+            purchaseOrder.setStatus(resolveInitialStatus(purchaseOrder.getTotalAmount()));
+        }
+
+        PurchaseOrder savedPurchaseOrder = purchaseOrderRepository.save(purchaseOrder);
+        if (savedPurchaseOrder.getStatus() == PurchaseOrderStatus.PendingApproval) {
+            notificationService.queueSystemNotification(
+                    null,
+                    "Purchase order requires approval",
+                    "Purchase order " + savedPurchaseOrder.getPurchaseOrderId() + " requires manager approval.",
+                    DatabaseTableNames.PURCHASE_ORDER,
+                    savedPurchaseOrder.getPurchaseOrderId()
+            );
+        }
+        return savedPurchaseOrder;
     }
 
     public PurchaseOrder updatePurchaseOrder(Long id, PurchaseOrder purchaseOrder) {
         PurchaseOrder existingPurchaseOrder = getPurchaseOrderById(id);
         validateModifiable(existingPurchaseOrder);
+        ensureSupplierExists(purchaseOrder.getSupplierId());
 
         existingPurchaseOrder.setSupplierId(purchaseOrder.getSupplierId());
         existingPurchaseOrder.setEmployeeId(purchaseOrder.getEmployeeId());
@@ -79,7 +105,9 @@ public class PurchaseOrderService {
 
         mergePurchaseOrderItems(existingPurchaseOrder, purchaseOrder.getPurchaseOrderItems());
         existingPurchaseOrder.setTotalAmount(calculateTotalAmount(existingPurchaseOrder.getPurchaseOrderItems()));
-        applyApprovalStatus(existingPurchaseOrder);
+        if (existingPurchaseOrder.getStatus() == null) {
+            existingPurchaseOrder.setStatus(resolveInitialStatus(existingPurchaseOrder.getTotalAmount()));
+        }
 
         return purchaseOrderRepository.save(existingPurchaseOrder);
     }
@@ -90,28 +118,20 @@ public class PurchaseOrderService {
         purchaseOrderRepository.delete(purchaseOrder);
     }
 
-    @Transactional(readOnly = true)
-    public PurchaseBillDto generateBill(Long purchaseOrderId) {
+    public PurchaseOrder approvePurchaseOrder(Long purchaseOrderId) {
         PurchaseOrder purchaseOrder = getPurchaseOrderById(purchaseOrderId);
-
-        return new PurchaseBillDto(
-                purchaseOrder.getPurchaseOrderId(),
-                purchaseOrder.getPurchaseOrderId(),
-                purchaseOrder.getSupplierId(),
-                purchaseOrder.getOrderDate(),
-                purchaseOrder.getTotalAmount() == null ? BigDecimal.ZERO : purchaseOrder.getTotalAmount(),
-                purchaseOrder.getStatus() == null ? null : purchaseOrder.getStatus().name()
-        );
-    }
-
-    public PurchaseOrder approvePurchaseOrder(Long purchaseOrderId, Long employeeId) {
-        PurchaseOrder purchaseOrder = getPurchaseOrderById(purchaseOrderId);
-
-        if (purchaseOrder.getStatus() != PurchaseOrderStatus.PendingApproval) {
-            throw new BusinessException("Only purchase orders pending approval can be approved");
+        if (purchaseOrder.getStatus() == PurchaseOrderStatus.Approved) {
+            throw new BusinessException("Purchase order is already approved");
+        }
+        if (purchaseOrder.getStatus() == PurchaseOrderStatus.Received) {
+            throw new BusinessException("Received purchase orders cannot be approved");
+        }
+        if (purchaseOrder.getStatus() == PurchaseOrderStatus.Cancelled) {
+            throw new BusinessException("Cancelled purchase orders cannot be approved");
         }
 
-        Employee employee = entityLookupService.getEmployeeReference(employeeId);
+        LocalDateTime now = LocalDateTime.now();
+        Employee employee = entityLookupService.getEmployeeReference(purchaseOrder.getEmployeeId());
         purchaseOrder.setStatus(PurchaseOrderStatus.Approved);
 
         auditLogRepository.save(AuditLog.builder()
@@ -119,14 +139,22 @@ public class PurchaseOrderService {
                 .tableName(DatabaseTableNames.PURCHASE_ORDER)
                 .actionType(AuditActionType.APPROVE.name())
                 .recordId(purchaseOrderId)
-                .actionDate(LocalDateTime.now())
+                .actionDate(now)
                 .description("Approved purchase order " + purchaseOrderId)
                 .build());
+
+        notificationService.queueSystemNotification(
+                null,
+                "Purchase order approved",
+                "Purchase order " + purchaseOrderId + " was approved.",
+                DatabaseTableNames.PURCHASE_ORDER,
+                purchaseOrderId
+        );
 
         return purchaseOrderRepository.save(purchaseOrder);
     }
 
-    public PurchaseOrder receivePurchaseOrder(Long purchaseOrderId, Long employeeId, Long warehouseId) {
+    public PurchaseOrder receivePurchaseOrder(Long purchaseOrderId, Long warehouseId) {
         PurchaseOrder purchaseOrder = getPurchaseOrderById(purchaseOrderId);
 
         if (purchaseOrder.getStatus() == PurchaseOrderStatus.Received) {
@@ -135,14 +163,16 @@ public class PurchaseOrderService {
         if (purchaseOrder.getStatus() == PurchaseOrderStatus.Cancelled) {
             throw new BusinessException("Cancelled purchase orders cannot be received");
         }
+        if (purchaseOrder.getStatus() == PurchaseOrderStatus.PendingApproval) {
+            throw new BusinessException("Purchase order must be approved before receiving");
+        }
 
-        LocalDateTime now = LocalDateTime.now();
-        Long auditEmployeeId = employeeId != null ? employeeId : purchaseOrder.getEmployeeId();
-        Employee employee = entityLookupService.getEmployeeReference(auditEmployeeId);
+        Employee employee = entityLookupService.getEmployeeReference(purchaseOrder.getEmployeeId());
         Warehouse warehouse = entityLookupService.getRequiredWarehouseReference(
                 warehouseId,
                 "Warehouse ID is required to receive purchase order stock"
         );
+        LocalDateTime now = LocalDateTime.now();
 
         for (PurchaseOrderItem purchaseOrderItem : purchaseOrder.getPurchaseOrderItems()) {
             Item rawMaterial = entityLookupService.getItem(
@@ -153,7 +183,6 @@ public class PurchaseOrderService {
                     purchaseOrderItem.getQuantity(),
                     "Purchase order item quantity must be greater than 0"
             );
-
             Item updatedRawMaterial = itemStockService.increaseStock(rawMaterial.getItemId(), warehouseId, quantity);
             inventoryTransactionRepository.save(InventoryTransaction.builder()
                     .item(updatedRawMaterial)
@@ -167,6 +196,22 @@ public class PurchaseOrderService {
         }
 
         purchaseOrder.setStatus(PurchaseOrderStatus.Received);
+        BigDecimal totalAmount = purchaseOrder.getTotalAmount() == null
+                ? calculateTotalAmount(purchaseOrder.getPurchaseOrderItems())
+                : purchaseOrder.getTotalAmount();
+
+        if (totalAmount.compareTo(BigDecimal.ZERO) > 0) {
+            generalLedgerService.recordBalancedEntry(
+                    GeneralLedgerService.INVENTORY,
+                    "Inventory",
+                    GeneralLedgerService.ACCOUNTS_PAYABLE,
+                    "Accounts Payable",
+                    totalAmount,
+                    DatabaseTableNames.PURCHASE_ORDER,
+                    purchaseOrderId,
+                    "Received purchase order " + purchaseOrderId
+            );
+        }
 
         auditLogRepository.save(AuditLog.builder()
                 .employee(employee)
@@ -177,14 +222,20 @@ public class PurchaseOrderService {
                 .description("Received purchase order " + purchaseOrderId)
                 .build());
 
+        notificationService.queueSystemNotification(
+                getSupplierEmail(purchaseOrder.getSupplierId()),
+                "Purchase order received",
+                "Purchase order " + purchaseOrderId + " was received into warehouse " + warehouseId + ".",
+                DatabaseTableNames.PURCHASE_ORDER,
+                purchaseOrderId
+        );
+
         return purchaseOrderRepository.save(purchaseOrder);
     }
 
-    private void attachItemsAndCalculateTotals(PurchaseOrder purchaseOrder) {
+    private void attachChildrenAndCalculateTotals(PurchaseOrder purchaseOrder) {
         if (purchaseOrder.getPurchaseOrderItems() == null) {
             purchaseOrder.setPurchaseOrderItems(new ArrayList<>());
-            purchaseOrder.setTotalAmount(BigDecimal.ZERO);
-            return;
         }
 
         for (PurchaseOrderItem item : purchaseOrder.getPurchaseOrderItems()) {
@@ -210,31 +261,26 @@ public class PurchaseOrderService {
     private BigDecimal calculateTotalAmount(List<PurchaseOrderItem> items) {
         return items.stream()
                 .map(PurchaseOrderItem::getLineTotal)
+                .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private void applyApprovalStatus(PurchaseOrder purchaseOrder) {
-        if (purchaseOrder.getStatus() == PurchaseOrderStatus.Received
-                || purchaseOrder.getStatus() == PurchaseOrderStatus.Cancelled
-                || purchaseOrder.getStatus() == PurchaseOrderStatus.Approved) {
-            return;
-        }
-
-        BigDecimal totalAmount = purchaseOrder.getTotalAmount() == null ? BigDecimal.ZERO : purchaseOrder.getTotalAmount();
+    private PurchaseOrderStatus resolveInitialStatus(BigDecimal totalAmount) {
         BigDecimal approvalThreshold = systemConfigurationService.getBigDecimal(
                 SystemConfigurationService.PURCHASE_APPROVAL_THRESHOLD,
-                BigDecimal.valueOf(100000)
+                DEFAULT_APPROVAL_THRESHOLD
         );
-        purchaseOrder.setStatus(totalAmount.compareTo(approvalThreshold) > 0
+        return totalAmount != null && totalAmount.compareTo(approvalThreshold) > 0
                 ? PurchaseOrderStatus.PendingApproval
-                : PurchaseOrderStatus.Pending);
+                : PurchaseOrderStatus.Pending;
     }
 
     private void validateModifiable(PurchaseOrder purchaseOrder) {
         if (purchaseOrder.getStatus() != null
                 && purchaseOrder.getStatus() != PurchaseOrderStatus.Pending
                 && purchaseOrder.getStatus() != PurchaseOrderStatus.PendingApproval) {
-            throw new BusinessException("Cannot modify a purchase order that is already " + purchaseOrder.getStatus());
+            throw new BusinessException("Cannot modify a purchase order that is already "
+                    + purchaseOrder.getStatus());
         }
     }
 
@@ -271,5 +317,20 @@ public class PurchaseOrderService {
             target.setUnitPrice(incoming.getUnitPrice());
             calculateLineTotal(target);
         }
+    }
+
+    private void ensureSupplierExists(Long supplierId) {
+        if (supplierId == null) {
+            throw new BusinessException("Supplier ID is required");
+        }
+        if (!supplierRepository.existsById(supplierId)) {
+            throw new ResourceNotFoundException("Supplier not found with id: " + supplierId);
+        }
+    }
+
+    private String getSupplierEmail(Long supplierId) {
+        return supplierRepository.findById(supplierId)
+                .map(Supplier::getEmail)
+                .orElse(null);
     }
 }

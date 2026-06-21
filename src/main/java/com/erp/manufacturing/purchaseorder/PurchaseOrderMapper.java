@@ -7,60 +7,46 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Component
 public class PurchaseOrderMapper {
 
     public PurchaseOrder toEntity(PurchaseOrderRequest request) {
-
         PurchaseOrder purchaseOrder = PurchaseOrder.builder()
-                .supplierId(request.supplierId())
-                .employeeId(request.employeeId())
-                .orderDate(request.orderDate())
-                .expectedDate(request.expectedDate())
-                .status(request.status())
+                .supplierId(request.getSupplierId())
+                .employeeId(request.getEmployeeId())
+                .orderDate(request.getOrderDate())
+                .expectedDate(request.getExpectedDate())
+                .status(request.getStatus())
                 .purchaseOrderItems(new ArrayList<>())
                 .build();
 
-        if (request.purchaseOrderItems() != null) {
-
-            request.purchaseOrderItems().forEach(itemRequest -> {
-
-                PurchaseOrderItem item = PurchaseOrderItem.builder()
-                        .purchaseOrderItemId(itemRequest.purchaseOrderItemId())
-                        .rawMaterialId(itemRequest.rawMaterialId())
-                        .quantity(itemRequest.quantity())
-                        .unitPrice(itemRequest.unitPrice())
-                        .build();
-
-                item.setPurchaseOrder(purchaseOrder);
-
-                purchaseOrder.getPurchaseOrderItems().add(item);
-            });
+        if (request.getPurchaseOrderItems() != null) {
+            request.getPurchaseOrderItems().forEach(itemRequest -> purchaseOrder.getPurchaseOrderItems().add(
+                    PurchaseOrderItem.builder()
+                            .purchaseOrderItemId(itemRequest.getPurchaseOrderItemId())
+                            .purchaseOrder(purchaseOrder)
+                            .rawMaterialId(itemRequest.getRawMaterialId())
+                            .quantity(itemRequest.getQuantity())
+                            .unitPrice(itemRequest.getUnitPrice())
+                            .build()
+            ));
         }
 
         return purchaseOrder;
     }
 
     public PurchaseOrderResponse toResponse(PurchaseOrder purchaseOrder) {
-
-        List<PurchaseOrderItemResponse> items = Collections.emptyList();
-
-        if (purchaseOrder.getPurchaseOrderItems() != null) {
-
-            items = purchaseOrder.getPurchaseOrderItems()
-                    .stream()
-                    .map(item -> new PurchaseOrderItemResponse(
-                            item.getPurchaseOrderItemId(),
-                            item.getRawMaterialId(),
-                            item.getQuantity(),
-                            item.getUnitPrice(),
-                            item.getLineTotal()
-                    ))
-                    .toList();
-        }
+        List<PurchaseOrderItemResponse> items = purchaseOrder.getPurchaseOrderItems().stream()
+                .map(item -> new PurchaseOrderItemResponse(
+                        item.getPurchaseOrderItemId(),
+                        item.getRawMaterialId(),
+                        item.getQuantity(),
+                        item.getUnitPrice(),
+                        item.getLineTotal()
+                ))
+                .toList();
 
         return new PurchaseOrderResponse(
                 purchaseOrder.getPurchaseOrderId(),

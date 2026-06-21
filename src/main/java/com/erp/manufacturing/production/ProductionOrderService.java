@@ -18,7 +18,6 @@ import com.erp.manufacturing.item.Item;
 import com.erp.manufacturing.item.ItemStockService;
 import com.erp.manufacturing.warehouse.Warehouse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,7 +32,6 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -82,21 +80,8 @@ public class ProductionOrderService {
         existingProductionOrder.setEndDate(productionOrder.getEndDate());
         existingProductionOrder.setPriority(productionOrder.getPriority());
 
-        existingProductionOrder.getMaterialUsages().clear();
-        if (productionOrder.getMaterialUsages() != null) {
-            for (ProductionMaterialUsage usage : productionOrder.getMaterialUsages()) {
-                usage.setProductionOrder(existingProductionOrder);
-                existingProductionOrder.getMaterialUsages().add(usage);
-            }
-        }
-
-        existingProductionOrder.getAssignments().clear();
-        if (productionOrder.getAssignments() != null) {
-            for (ProductionAssignment assignment : productionOrder.getAssignments()) {
-                assignment.setProductionOrder(existingProductionOrder);
-                existingProductionOrder.getAssignments().add(assignment);
-            }
-        }
+        mergeMaterialUsages(existingProductionOrder, productionOrder.getMaterialUsages());
+        mergeAssignments(existingProductionOrder, productionOrder.getAssignments());
 
         return productionOrderRepository.save(existingProductionOrder);
     }
@@ -168,8 +153,7 @@ public class ProductionOrderService {
                 .build());
 
         productionOrder.setStatus(ProductionOrderStatus.Completed);
-        productionOrder.setQuantityProduced(productionOrder.getQuantityToProduce());
-        productionOrder.setEndDate(LocalDateTime.now());
+        productionOrder.setQuantityProduced(producedQuantity);
 
         auditLogRepository.save(AuditLog.builder()
                 .employee(employee)
@@ -180,20 +164,7 @@ public class ProductionOrderService {
                 .description("Completed production order " + productionOrderId)
                 .build());
 
-        log.info("Before Save -> ID={}, Status={}, PlannedQty={}, ProducedQty={}, EndDate={}",
-                productionOrder.getProductionOrderId(),
-                productionOrder.getStatus(),
-                productionOrder.getQuantityToProduce(),
-                productionOrder.getQuantityProduced(),
-                productionOrder.getEndDate());
-
-        ProductionOrder saved = productionOrderRepository.save(productionOrder);
-
-        log.info("Production Order {} completed", productionOrder.getProductionOrderId());
-        log.info("Status: {}", productionOrder.getStatus());
-        log.info("Quantity Produced: {}", productionOrder.getQuantityProduced());
-
-        return saved;
+        return productionOrderRepository.save(productionOrder);
     }
 
     private void attachChildren(ProductionOrder productionOrder) {
@@ -244,8 +215,7 @@ public class ProductionOrderService {
             generatedUsages.add(usage);
         }
 
-        productionOrder.getMaterialUsages().clear();
-        productionOrder.getMaterialUsages().addAll(generatedUsages);
+        productionOrder.setMaterialUsages(generatedUsages);
     }
 
     private void validateModifiable(ProductionOrder productionOrder) {

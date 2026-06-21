@@ -18,10 +18,19 @@ public class DatabaseUserDetailsService implements UserDetailsService {
         AppUser appUser = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
+        java.util.List<org.springframework.security.core.GrantedAuthority> authorities = new java.util.ArrayList<>();
+        authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + appUser.getRole().name()));
+
+        if (appUser.getPermissionCodes() != null) {
+            appUser.getPermissionCodes().forEach(permission -> authorities.add(
+                    new org.springframework.security.core.authority.SimpleGrantedAuthority(permission)
+            ));
+        }
+
         return User.builder()
                 .username(appUser.getUsername())
                 .password(appUser.getPasswordHash())
-                .roles(appUser.getRole().name())
+                .authorities(authorities)
                 .disabled(Boolean.FALSE.equals(appUser.getEnabled()))
                 .build();
     }

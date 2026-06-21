@@ -1,5 +1,9 @@
 package com.erp.manufacturing.production.dto;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 import com.erp.manufacturing.common.enums.ProductionOrderStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -9,17 +13,19 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record ProductionOrderRequest(
-        @NotNull Long finishedProductId,
-        Long employeeId,
-        LocalDateTime productionDate,
-        @NotNull @Positive BigDecimal quantityToProduce,
-        BigDecimal quantityProduced,
-        ProductionOrderStatus status,
-        LocalDateTime startDate,
-        LocalDateTime endDate,
-        String priority,
-        @Valid List<ProductionMaterialUsageRequest> materialUsages,
-        @Valid List<ProductionAssignmentRequest> assignments
-) {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ProductionOrderRequest {
+    private @NotNull Long finishedProductId;
+    private Long employeeId;
+    private LocalDateTime productionDate;
+    private @NotNull @Positive BigDecimal quantityToProduce;
+    private BigDecimal quantityProduced;
+    private ProductionOrderStatus status;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
+    private String priority;
+    private @Valid List<ProductionMaterialUsageRequest> materialUsages;
+    private @Valid List<ProductionAssignmentRequest> assignments;
 }

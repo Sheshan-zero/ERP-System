@@ -1,31 +1,20 @@
 package com.erp.manufacturing.customer.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
-@Builder
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CustomerResponse {
-
-        private Long customerId;
-
-        private String customerName;
-
-        private String contactNo;
-
-        private String email;
-
-        private String address;
-
-        private String customerType;
-
-        private LocalDateTime registrationDate;
+    private Long customerId;
+    private String customerName;
+    private String contactNo;
+    private String email;
+    private String address;
+    private String customerType;
+    private LocalDateTime registrationDate;
 }

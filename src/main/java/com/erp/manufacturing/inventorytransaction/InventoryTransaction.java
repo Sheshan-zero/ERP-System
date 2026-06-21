@@ -39,15 +39,16 @@ public class InventoryTransaction {
     @Column(name = "TRANSACTION_ID", nullable = false)
     private Long transactionId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ITEM_ID")
+    @NotNull(message = "Item is required")
     private Item item;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "WAREHOUSE_ID")
     private Warehouse warehouse;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "EMPLOYEE_ID")
     private Employee employee;
 

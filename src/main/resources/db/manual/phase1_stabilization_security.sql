@@ -15,6 +15,14 @@ CREATE TABLE app_user (
         REFERENCES employee(employee_id)
 );
 
+CREATE TABLE app_user_permission (
+    user_id NUMBER NOT NULL,
+    permission_code VARCHAR2(100) NOT NULL,
+    CONSTRAINT pk_app_user_permission PRIMARY KEY (user_id, permission_code),
+    CONSTRAINT fk_app_user_permission_user
+        FOREIGN KEY (user_id) REFERENCES app_user(user_id) ON DELETE CASCADE
+);
+
 -- Replace the password hash before using this account in production.
 -- This BCrypt hash is for: admin123
 INSERT INTO app_user (username, password_hash, role, enabled, employee_id)

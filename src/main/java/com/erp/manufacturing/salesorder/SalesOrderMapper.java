@@ -15,34 +15,34 @@ public class SalesOrderMapper {
 
     public SalesOrder toEntity(SalesOrderRequest request) {
         SalesOrder salesOrder = SalesOrder.builder()
-                .customerId(request.customerId())
-                .employeeId(request.employeeId())
-                .orderDate(request.orderDate())
-                .orderStatus(request.orderStatus())
+                .customerId(request.getCustomerId())
+                .employeeId(request.getEmployeeId())
+                .orderDate(request.getOrderDate())
+                .orderStatus(request.getOrderStatus())
                 .salesOrderItems(new ArrayList<>())
                 .payments(new ArrayList<>())
                 .build();
 
-        if (request.salesOrderItems() != null) {
-            request.salesOrderItems().forEach(item -> salesOrder.getSalesOrderItems().add(
+        if (request.getSalesOrderItems() != null) {
+            request.getSalesOrderItems().forEach(item -> salesOrder.getSalesOrderItems().add(
                     SalesOrderItem.builder()
-                            .salesOrderItemId(item.salesOrderItemId())
+                            .salesOrderItemId(item.getSalesOrderItemId())
                             .salesOrder(salesOrder)
-                            .finishedProductId(item.finishedProductId())
-                            .quantity(item.quantity())
-                            .unitPrice(item.unitPrice())
+                            .finishedProductId(item.getFinishedProductId())
+                            .quantity(item.getQuantity())
+                            .unitPrice(item.getUnitPrice())
                             .build()
             ));
         }
-        if (request.payments() != null) {
-            request.payments().forEach(payment -> salesOrder.getPayments().add(
+        if (request.getPayments() != null) {
+            request.getPayments().forEach(payment -> salesOrder.getPayments().add(
                     Payment.builder()
-                            .paymentId(payment.paymentId())
+                            .paymentId(payment.getPaymentId())
                             .salesOrder(salesOrder)
-                            .paymentDate(payment.paymentDate())
-                            .amount(payment.amount())
-                            .paymentMethod(payment.paymentMethod())
-                            .paymentStatus(payment.paymentStatus())
+                            .paymentDate(payment.getPaymentDate())
+                            .amount(payment.getAmount())
+                            .paymentMethod(payment.getPaymentMethod())
+                            .paymentStatus(payment.getPaymentStatus())
                             .build()
             ));
         }
